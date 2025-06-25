@@ -106,12 +106,6 @@ This project presents an end-to-end Early Warning System for GLOFs using:
 
 ---
 
-## 🙌 Credits
-
-Developed by **Akshitha** and contributors. For questions, open an issue or contact via the repository.
-
----
-
 <div align="center">
   <sub>🌏 This project is for research and educational purposes. Stay safe! 🌏</sub>
 </div>
