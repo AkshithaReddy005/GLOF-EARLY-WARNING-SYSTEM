@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Services - Gorgeous Site</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    </head>
+    <body>
+        <header>
+            <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+            <nav>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('about') }}">About Us</a></li>
+                    <li><a href="{{ url_for('services') }}">Services</a></li>
+                    <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                </ul>
+            </nav>
+        </header>
+
+    <section id="contact">
+        <h2>Contact Us</h2>
+        <p>If you have any questions or need assistance, feel free to reach out to us via email or phone. We are here to help!</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 GLOF Site. All rights reserved.</p>
+    </footer>
+</body>
+</html>

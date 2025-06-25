@@ -1,0 +1,125 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    color: #333;
+}
+.logo {
+    height: 50px; /* Adjust size as needed */
+    margin-right: 20px; /* Space between logo and navigation */
+    position: absolute;
+    top: 10px; /* Adjust based on your header padding */
+    left: 20px; /* Adjust based on your header padding */
+        }
+
+header {
+    background: #007acc;
+    color: #fff;
+    padding: 15px 20px;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+nav ul li a:hover {
+    color: #ffd700;
+}
+
+section {
+    padding: 40px 20px;
+    text-align: center;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+}
+
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Hero Section for Home Page */
+.hero {
+    background: url('https://img.lemde.fr/2024/01/12/516/0/6196/3098/1440/720/60/0/5aa7556_1705059072888-080-hl-lpierre-1980155.jpg') no-repeat center center/cover;
+    height: 400px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 48px;
+    margin: 0;
+}
+
+/* About Us Page Styles */
+#about {
+    background: url('https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.lemonde.fr%2Fen%2Fenvironment%2Farticle%2F2024%2F01%2F16%2Fin-the-mont-blanc-mountain-range-high-altitude-glacier-melting-has-accelerated-sharply_6438740_114.html&psig=AOvVaw3GFNL8SlsS72Dcufzash_2&ust=1726154351509000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOjGrNaXu4gDFQAAAAAdAAAAABAE') no-repeat center center/cover;
+    color: #fff;
+}
+
+#about h2 {
+    color: #007acc;
+}
+
+#about p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* Services Page Styles */
+#services {
+    background: #f0f4f8;
+}
+
+#services h2 {
+    color: #007acc;
+}
+
+#services p {
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+/* Contact Page Styles */
+#contact {
+    background: url('https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.lemonde.fr%2Fen%2Fenvironment%2Farticle%2F2024%2F01%2F16%2Fin-the-mont-blanc-mountain-range-high-altitude-glacier-melting-has-accelerated-sharply_6438740_114.html&psig=AOvVaw3GFNL8SlsS72Dcufzash_2&ust=1726154351509000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCOjGrNaXu4gDFQAAAAAdAAAAABAE') no-repeat center center/cover;
+    color: #cad6db;
+}
+
+#contact h2 {
+    color: #007acc;
+}
+
+#contact p {
+    color: #031444;
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.6;
+}

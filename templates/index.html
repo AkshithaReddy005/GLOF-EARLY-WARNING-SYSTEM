@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title if title else "GLOF EWS" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f4f6f9;
+        }
+        .logo {
+    height: 50px; /* Adjust size as needed */
+    margin-right: 20px; /* Space between logo and navigation */
+    position: absolute;
+    top: 10px; /* Adjust based on your header padding */
+    left: 20px; /* Adjust based on your header padding */
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            width: 30%;
+            padding: 20px;
+            background: linear-gradient(135deg, #f9f9f9, #e2f0f4);
+            box-sizing: border-box;
+            overflow-y: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls h2 {
+            margin-top: 0;
+            color: #4a90e2;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls label {
+            margin-top: 10px;
+            display: block;
+            color: #555;
+        }
+
+        .controls select, .controls input {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            background: #ffffff;
+            font-size: 16px;
+        }
+
+        .controls select {
+            background: linear-gradient(135deg, #e2f0f4, #f9f9f9);
+        }
+
+        .controls input {
+            background: linear-gradient(135deg, #f9f9f9, #ffffff);
+        }
+
+        .controls button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: none;
+            border-radius: 6px;
+            background: #4a90e2;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls button:hover {
+            background: #357abd;
+            transform: scale(1.02);
+        }
+
+        .chart-container {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        #charts {
+            width: 100%;
+            height: 60%;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .alerts {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            height: 40%;
+            border: 1px solid #e2e2e2;
+        }
+
+        .alerts h3 {
+            margin-top: 0;
+            color: #4a90e2;
+        }
+
+        .alert-item {
+            background: #fafafa;
+            border: 1px solid #e2e2e2;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .alert-item:hover {
+            background: #f0f8ff;
+            transform: scale(1.01);
+        }
+
+        .alert-date {
+            font-size: 0.9em;
+            color: #888;
+        }
+
+        .alert-type {
+            font-weight: bold;
+            color: #e94e77;
+        }
+
+        .alert-message {
+            margin-top: 5px;
+            font-size: 1em;
+            color: #555;
+        }
+
+        .alert-location {
+            font-size: 0.9em;
+            color: #333;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .filter-controls {
+            margin-bottom: 15px;
+        }
+
+        .filter-controls label {
+            margin-right: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .flex-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls, .chart-container {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        .signin-container {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: #007acc;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s ease;
+        }
+
+        .signin-container a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            transition: color 0.3s ease;
+        }
+
+        .signin-container a:hover {
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('about') }}">About Us</a></li>
+                <li><a href="{{ url_for('services') }}">Services</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="hero">
+        <h1>Glaciers Outburst Early Warning System</h1>
+    </div>
+
+    <section id="home">
+        <h2>GLOF</h2>
+        <p>Our system utilizes advanced technology to monitor and predict glacier outbursts, providing timely warnings and enhancing safety for communities at risk.</p>
+    </section>
+
+    <div class="signin-container" id="signin">
+        <a href="{{ url_for('sign') }}" target="_blank">Sign In</a>
+    </div>
+
+    <h2 style="text-align:center;">Analytics Dashboard</h2>
+
+    <div class="flex-container">
+        <div class="controls">
+            <h2>Data Controls</h2>
+            <label for="data-select">Choose data to display:</label>
+            <select id="data-select">
+                <!-- Updated options based on the dataset -->
+                <option value="altitude">Altitude</option>
+                <option value="area">Glacier Area</option>
+                <!-- Add more options as necessary -->
+            </select>
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date">
+            <label for="end-date">End Date:</label>
+            <input type="date" id="end-date">
+            <button id="download-data">Download Data</button>
+        </div>
+
+        <div class="chart-container">
+            <div id="charts"></div>
+            <div class="alerts">
+                <div class="filter-controls">
+                    <label for="severity-select">Filter by severity:</label>
+                    <select id="severity-select">
+                        <option value="all">All</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <h3>Current & Previous Alerts</h3>
+                <div id="alerts-list">
+                    <!-- Alerts will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <h2>Submit Your Input</h2>
+                    <form method="POST" action="{{ url_for('index') }}">
+                        <div class="flex-container">
+                            <label for="input_string">Input:</label>
+                            <textarea name="input_string" id="input_string" rows="4" cols="50" required></textarea>
+                            <button type="submit">Submit</button>
+                        </div>
+                    </form>
+
+                    {% if results %}
+                        <h2>Results</h2>
+                        <p style="font-weight: bold; font-size: 1.5em; color: #333;">
+                            {{ results.message }}
+                        </p>
+                    {% endif %}
+
+                    {% if error %}
+                        <p>Error: {{ error }}</p>
+                    {% endif %}
+        </div>
+                        
+    </div>
+    
+    <script>
+     function updateChart(selectedValue) {
+            var startDate = document.getElementById('start-date').value;
+            var endDate = document.getElementById('end-date').value;
+
+            // Simulate filtering data by date range
+            var filteredData = {
+                'seismic': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [0, 1, 0]}],
+                'temperature': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [20, 22, 19]}],
+                'water-level': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [100, 105, 102]}],
+                'dam-stability': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [90, 85, 88]}]
+            };
+
+            var data = filteredData[selectedValue];
+            var layout = {
+                title: 'GLOF Monitoring Data',
+                xaxis: {title: 'Date'},
+                yaxis: {title: 'Value'}
+            };
+
+            Plotly.newPlot('charts', data, layout);
+        }
+
+        function displayAlerts(severityFilter = 'all') {
+            var alerts = [
+                {type: 'Warning', severity: 'High', date: '2024-08-28', time: '14:30', message: 'High water level detected in Glacial Lake Alpha.', location: 'Glacial Lake Alpha, Region X, Latitude 45.123, Longitude -120.456'},
+                {type: 'Alert', severity: 'Medium', date: '2024-08-27', time: '09:00', message: 'Temperature fluctuation observed in Glacial Lake Beta.', location: 'Glacial Lake Beta, Region Y, Latitude 46.789, Longitude -121.654'},
+                // Add more alerts as needed
+            ];
+
+            var filteredAlerts = alerts.filter(alert => severityFilter === 'all' || alert.severity.toLowerCase() === severityFilter.toLowerCase());
+            var alertsList = document.getElementById('alerts-list');
+            alertsList.innerHTML = '';
+
+            filteredAlerts.forEach(alert => {
+                var alertDiv = document.createElement('div');
+                alertDiv.className = 'alert-item';
+                alertDiv.innerHTML = `
+                    <div class="alert-date">${alert.date} ${alert.time}</div>
+                    <div class="alert-type">${alert.type} (${alert.severity})</div>
+                    <div class="alert-message">${alert.message}</div>
+                    <div class="alert-location">${alert.location}</div>
+                `;
+                alertsList.appendChild(alertDiv);
+            });
+        }
+
+        // Initialize chart and alerts
+        updateChart('seismic');
+        displayAlerts();
+
+        // Event listener for data select
+        document.getElementById('data-select').addEventListener('change', function() {
+            updateChart(this.value);
+        });
+
+        // Event listener for severity filter
+        document.getElementById('severity-select').addEventListener('change', function() {
+            displayAlerts(this.value);
+        });
+
+        // Event listener for date inputs
+        document.getElementById('start-date').addEventListener('change', function() {
+            updateChart(document.getElementById('data-select').value);
+        });
+
+        document.getElementById('end-date').addEventListener('change', function() {
+            updateChart(document.getElementById('data-select').value);
+        });
+
+        window.addEventListener('scroll', function () {
+            var signin = document.getElementById('signin');
+            var scrollPosition = window.scrollY;
+
+            if (scrollPosition > 100) {
+                signin.style.opacity = '0';
+            } else {
+                signin.style.opacity = '1';
+            }
+        });
+    </script>
+</body>
+</html>
