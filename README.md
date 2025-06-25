@@ -1,28 +1,48 @@
-# GLOF: Glacial Lake Outburst Flood Early Warning System
+<div align="center">
 
-This project predicts Glacial Lake Outburst Floods (GLOFs) using real-time IoT sensor data and historical trends. It provides accurate early warning notifications through time-series data analysis and deep learning models.
+# 🌊 GLOF Early Warning System
 
-## Features
-- Predicts GLOF events using LSTM-based deep learning models
-- Processes real-time and historical data
-- Web interface for user input and result visualization (Flask)
-- Model training, preprocessing, and prediction scripts
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.7%2B-blue?logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-Web%20App-lightgrey?logo=flask)](https://flask.palletsprojects.com/)
 
-## Project Structure
-- `main.py`: Flask web app entry point; routes for input, results, and static pages
-- `modelpredict.py`: Model loading, preprocessing, and prediction logic
-- `bilstmmodel.py` & `smot_model.py`: Data preprocessing and model training scripts
-- `app.py`: (Legacy/alternate entry point)
-- `templates/`: HTML templates for the web interface
-- `static/`: Static files (CSS, images)
-- `dataset/GLOFData.csv`: Main dataset used for model training
-- `*.h5`, `*.pkl`: Trained model and preprocessing artifacts
+Predicting Glacial Lake Outburst Floods (GLOFs) using real-time IoT sensor data and historical trends, powered by deep learning and a user-friendly web interface.
 
-## Setup Instructions
+</div>
+
+---
+
+## 🚀 Features
+
+- 🤖 **LSTM-based Deep Learning Model** for accurate GLOF prediction
+- 📊 Processes both real-time and historical data
+- 🌐 **Web Interface** for easy data input & result visualization
+- 🛠️ Model training, preprocessing, and prediction scripts
+
+---
+
+## 🗂️ Project Structure
+
+| File/Folder           | Purpose                                                      |
+|----------------------|--------------------------------------------------------------|
+| `main.py`            | Flask web app entry point; routes for input, results, pages   |
+| `modelpredict.py`    | Model loading, preprocessing, and prediction logic            |
+| `bilstmmodel.py`     | Data preprocessing & model training script                   |
+| `smot_model.py`      | Alternative data/model script                                |
+| `app.py`             | (Legacy/alternate entry point)                               |
+| `templates/`         | HTML templates for the web interface                         |
+| `static/`            | Static files (CSS, images)                                   |
+| `dataset/GLOFData.csv`| Main dataset used for model training                        |
+| `*.h5`, `*.pkl`      | Trained model & preprocessing artifacts                      |
+
+---
+
+## ⚡ Quickstart
+
 1. **Clone the repository:**
    ```sh
-   git clone https://github.com/<YOUR-USERNAME>/<REPO-NAME>.git
-   cd <REPO-NAME>
+   git clone https://github.com/AkshithaReddy005/GLOF-EARLY-WARNING-SYSTEM.git
+   cd GLOF-EARLY-WARNING-SYSTEM
    ```
 2. **Install dependencies:**
    ```sh
@@ -32,23 +52,35 @@ This project predicts Glacial Lake Outburst Floods (GLOFs) using real-time IoT s
    ```sh
    python main.py
    ```
-   The app will be available at `http://127.0.0.1:5000/`.
+   The app will be available at [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
 
-## Usage
+---
+
+## 💻 Usage
+
 - Open the web interface and enter sensor data as a comma-separated string.
 - The system will process the input and display GLOF prediction results.
 
-## Requirements
+---
+
+## 🧩 Requirements
+
 - Python 3.7+
 - Flask
 - TensorFlow
 - scikit-learn
 - pandas, numpy, joblib
 
-*See `requirements.txt` for full package list.*
-
-## Credits
-Developed by Akshitha and contributors. For questions, open an issue or contact via the repository.
+*See `requirements.txt` for the full package list.*
 
 ---
-*This project is for research and educational purposes.*
+
+## 🙌 Credits
+
+Developed by **Akshitha** and contributors. For questions, open an issue or contact via the repository.
+
+---
+
+<div align="center">
+  <sub>🌏 This project is for research and educational purposes. Stay safe! 🌏</sub>
+</div>
