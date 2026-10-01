@@ -29,9 +29,9 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # Save scaler, label encoders, and feature names
-joblib.dump(scaler, 'scaler.pkl')
-joblib.dump(label_encoders, 'label_encoders.pkl')
-joblib.dump(X.columns, 'feature_names.pkl')
+joblib.dump(scaler, 'scaler_new.pkl')
+joblib.dump(label_encoders, 'label_encoders_new.pkl')
+joblib.dump(X.columns, 'feature_names_new.pkl')
 
 
 # Encode categorical variables
@@ -157,7 +157,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)  # Adjusted learning r
 model.compile(optimizer=optimizer, loss=focal_loss(gamma=2., alpha=0.25), metrics=['accuracy'])
 
 # Callbacks
-checkpoint = ModelCheckpoint('best_bilstm_model_new_soft.h5', monitor='val_loss', save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint('best_bilstm_model_latest.h5', monitor='val_loss', save_best_only=True, mode='min')
 early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
 # Train the model with class weights

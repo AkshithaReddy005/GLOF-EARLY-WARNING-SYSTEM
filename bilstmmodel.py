@@ -30,7 +30,7 @@ for column in df.select_dtypes(include=['object']).columns:
     label_encoders[column] = le
 
 #label encoders
-joblib.dump(label_encoders, 'label_encoders.pkl')
+joblib.dump(label_encoders, 'label_encoders_latest.pkl')
 
 #data types
 # print("Data types after encoding:")
@@ -91,7 +91,7 @@ model = tf.keras.Sequential([
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 #early stopping the model for better accuracy
-checkpoint = ModelCheckpoint('best_bilstm_model.h5', monitor='val_loss', save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint('best_bilstm_model_latest.h5', monitor='val_loss', save_best_only=True, mode='min')
 early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
 #training the model
