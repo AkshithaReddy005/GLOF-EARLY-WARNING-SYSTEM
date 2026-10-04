@@ -2,30 +2,23 @@
 modelpredict.py
 ===============
 GLOF Early Warning System — Inference Engine
-Efftronics R&D Production Build — Rev 2.0
+Efftronics R&D Production Build — Rev 3.0
 -------------------------------------------
-Changes from Rev 1.0:
-  * Dual-engine support: TFLite INT8 edge binary (primary) + Keras .h5 (fallback)
-  * Dynamic rolling look-back window preprocessing (look-back = 10 time steps)
-  * Structured console logging (timestamp, stage, latency metrics)
-  * Explicit inference latency reporting for live demo visibility
-
-Architecture:
-    Raw CSV string
-        │
-        ├─ Label encoding  (label_encoders.pkl)
-        ├─ Standard scaling (scaler.pkl)
-        ├─ 3-D rolling tensor reshape (batch, lookback, features)
-        │
-        ├─► TFLite INT8 engine  ← primary (sub-50ms, edge MCU target)
-        └─► Keras .h5 engine    ← fallback (cloud / development)
+Changes from Rev 2.0:
+  * Inference functions now return (class, probability) tuples
+  * predict() returns a rich result dict: class, probability, risk_percentage,
+    risk_label, inference_ms, engine, lake_id, latitude, longitude
+  * New _extract_metadata() helper parses lake identity and coordinates
+    directly from the raw input string using feature_names column order
+  * input_model() exposes the full dict — backwards-compatible via "message" key
+  * All downstream consumers (Flask, API, batch pipeline) benefit automatically
 """
 
 import joblib
 import logging
 import time
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -33,10 +26,7 @@ import tensorflow as tf
 from tensorflow.keras.utils import custom_object_scope
 
 # ─── Logging ───────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
 # ─── Paths ─────────────────────────────────────────────────────────────────────
@@ -46,16 +36,14 @@ SCALER_PATH       = "scaler.pkl"
 ENCODERS_PATH     = "label_encoders.pkl"
 FEATURES_PATH     = "feature_names.pkl"
 
-# ─── Look-back window (rolling sequence depth) ─────────────────────────────────
-DEFAULT_LOOKBACK = 10   # Number of sequential time-step snapshots per inference
+DEFAULT_LOOKBACK  = 10
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Custom Loss (required to load the .h5 fallback model)
+# Custom Loss (required to deserialise the Keras .h5 fallback model)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def focal_loss(gamma: float = 2.0, alpha: float = 0.25):
-    """Focal Loss — matches the function used during training."""
     def focal_loss_fixed(y_true, y_pred):
         epsilon = tf.keras.backend.epsilon()
         y_true  = tf.convert_to_tensor(y_true, tf.float32)
@@ -76,34 +64,62 @@ log.info("[INIT] Loading preprocessing artifacts...")
 scaler         = joblib.load(SCALER_PATH)
 label_encoders = joblib.load(ENCODERS_PATH)
 feature_names  = joblib.load(FEATURES_PATH)
-log.info("[INIT] Scaler, encoders, and feature names loaded. (%d features)", len(feature_names))
+log.info("[INIT] Loaded %d features.", len(feature_names))
 
-
-# ─── TFLite interpreter (primary edge engine) ──────────────────────────────────
+# ─── TFLite primary engine ────────────────────────────────────────────────────
 _tflite_interpreter: Optional[tf.lite.Interpreter] = None
 
 if os.path.exists(TFLITE_MODEL_PATH):
-    log.info("[ENGINE] TFLite INT8 edge binary found → %s", TFLITE_MODEL_PATH)
+    log.info("[ENGINE] TFLite INT8 binary found → %s", TFLITE_MODEL_PATH)
     _tflite_interpreter = tf.lite.Interpreter(model_path=TFLITE_MODEL_PATH)
     _tflite_interpreter.allocate_tensors()
     _tflite_input_details  = _tflite_interpreter.get_input_details()
     _tflite_output_details = _tflite_interpreter.get_output_details()
-    log.info("[ENGINE] TFLite interpreter initialised. Primary engine: ACTIVE.")
+    log.info("[ENGINE] TFLite interpreter ready. Primary engine: ACTIVE.")
 else:
-    log.warning(
-        "[ENGINE] TFLite model not found at '%s'. "
-        "Falling back to Keras .h5. Run quantize.py to build the edge binary.",
-        TFLITE_MODEL_PATH,
-    )
+    log.warning("[ENGINE] TFLite model not found. Run quantize.py to build it.")
 
-# ─── Keras fallback model ──────────────────────────────────────────────────────
+# ─── Keras fallback engine ────────────────────────────────────────────────────
 _keras_model = None
 
 if _tflite_interpreter is None:
-    log.info("[ENGINE] Loading Keras fallback model from: %s", KERAS_MODEL_PATH)
+    log.info("[ENGINE] Loading Keras fallback model: %s", KERAS_MODEL_PATH)
     with custom_object_scope({"focal_loss_fixed": focal_loss(gamma=2.0, alpha=0.25)}):
         _keras_model = tf.keras.models.load_model(KERAS_MODEL_PATH)
     log.info("[ENGINE] Keras model loaded. Fallback engine: ACTIVE.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Metadata Extraction
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _extract_metadata(raw_list: list) -> dict:
+    """
+    Parse lake_id, latitude, and longitude from the raw split input list,
+    using the column order defined in feature_names.pkl.
+
+    Falls back gracefully if columns are not found or values are non-numeric.
+
+    Returns:
+        dict with keys: lake_id (str), latitude (float|None), longitude (float|None)
+    """
+    feature_list = list(feature_names)
+    lake_id = str(raw_list[0]).strip() if raw_list else "UNKNOWN"
+    lat, lon = None, None
+
+    for i, fname in enumerate(feature_list):
+        if i >= len(raw_list):
+            break
+        fname_lower = fname.lower()
+        try:
+            if fname_lower in ("latitude", "lat"):
+                lat = float(raw_list[i])
+            elif fname_lower in ("longitude", "lon"):
+                lon = float(raw_list[i])
+        except (ValueError, TypeError):
+            pass
+
+    return {"lake_id": lake_id, "latitude": lat, "longitude": lon}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -112,43 +128,26 @@ if _tflite_interpreter is None:
 
 def _parse_single_snapshot(input_str: str) -> np.ndarray:
     """
-    Parse a single comma-separated feature string into a normalised 1-D numpy
-    array of shape (num_features,).
-
-    Steps:
-        1. Split string by comma and strip embedded quotes.
-        2. Build a DataFrame aligned to feature_names.
-        3. Apply label encoding to categorical columns.
-        4. Cast all values to numeric (NaN-fill any coerce failures).
-        5. Reorder columns to match training order.
-        6. Apply StandardScaler normalisation.
-
-    Returns:
-        np.ndarray of shape (num_features,)
+    Parse a comma-separated feature string → normalised 1-D numpy array.
     """
-    input_list = input_str.replace('"', '').split(',')
-    data = pd.DataFrame([input_list], columns=feature_names)
+    raw_list = input_str.replace('"', '').split(',')
+    data = pd.DataFrame([raw_list], columns=feature_names)
 
-    # Encode categorical features
     for col, le in label_encoders.items():
         if col in data.columns:
-            known = list(le.classes_)
+            known    = list(le.classes_)
             fallback = known[0]
             data[col] = data[col].apply(lambda x: x if x in known else fallback)
             data[col] = le.transform(data[col])
 
-    # Coerce all to numeric, fill NaN with 0
     data = data.apply(pd.to_numeric, errors='coerce').fillna(0)
 
-    # Add any missing columns as zeros and reorder
     for col in feature_names:
         if col not in data.columns:
             data[col] = 0
     data = data[feature_names]
 
-    # Scale
-    scaled = scaler.transform(data)
-    return scaled.flatten()  # shape: (num_features,)
+    return scaler.transform(data).flatten()
 
 
 def transform_to_time_series_matrix(
@@ -156,177 +155,150 @@ def transform_to_time_series_matrix(
     lookback_window: int = DEFAULT_LOOKBACK,
 ) -> np.ndarray:
     """
-    Convert a 2-D array of sequential snapshots into a 3-D rolling look-back
-    tensor suitable for BiLSTM layers.
-
-    Args:
-        historical_snapshots: np.ndarray of shape (num_snapshots, num_features).
-                              Each row is one time-step reading from the sensor.
-        lookback_window:      Number of consecutive time steps per sample.
-
-    Returns:
-        np.ndarray of shape (num_samples, lookback_window, num_features)
-        where num_samples = num_snapshots - lookback_window + 1.
-
-    Why this matters:
-        Instead of evaluating a single frozen vector, the BiLSTM tracks the
-        *velocity and acceleration* of each parameter over the look-back period
-        (e.g., seismic magnitude trending upward over 10 days). This dramatically
-        reduces false-alarm rates compared to single-snapshot inference.
+    Convert a 2-D (snapshots, features) array into a 3-D rolling look-back
+    tensor of shape (num_samples, lookback_window, features).
     """
     if historical_snapshots.ndim != 2:
         raise ValueError(
-            f"Expected 2-D input array (snapshots, features), "
-            f"got shape {historical_snapshots.shape}"
+            f"Expected 2-D input, got shape {historical_snapshots.shape}"
         )
 
     n_snapshots, n_features = historical_snapshots.shape
 
     if n_snapshots < lookback_window:
-        # Pad with zeros at the front so we always produce at least 1 sample
         pad = np.zeros((lookback_window - n_snapshots, n_features))
         historical_snapshots = np.vstack([pad, historical_snapshots])
         n_snapshots = lookback_window
 
-    X_sequence = []
-    for i in range(n_snapshots - lookback_window + 1):
-        X_sequence.append(historical_snapshots[i : i + lookback_window, :])
-
-    return np.array(X_sequence)   # (num_samples, lookback_window, num_features)
+    return np.array([
+        historical_snapshots[i: i + lookback_window, :]
+        for i in range(n_snapshots - lookback_window + 1)
+    ])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Inference Engines
+# Inference Engines  (now return (class_int, probability_float) tuples)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _infer_tflite(tensor: np.ndarray) -> int:
-    """
-    Run a single forward pass through the TFLite INT8 interpreter.
-
-    Args:
-        tensor: np.ndarray of shape (1, lookback, features) — float32.
-
-    Returns:
-        Predicted class integer (0 = Safe, 1 = GLOF Alert).
-    """
+def _infer_tflite(tensor: np.ndarray) -> Tuple[int, float]:
+    """TFLite INT8 forward pass. Returns (predicted_class, probability)."""
     _tflite_interpreter.set_tensor(
-        _tflite_input_details[0]['index'],
-        tensor.astype(np.float32),
+        _tflite_input_details[0]['index'], tensor.astype(np.float32)
     )
     _tflite_interpreter.invoke()
     output = _tflite_interpreter.get_tensor(_tflite_output_details[0]['index'])
-    return int((output[0][0] > 0.5))
+    prob   = float(output[0][0])
+    return int(prob > 0.5), round(prob, 4)
 
 
-def _infer_keras(tensor: np.ndarray) -> int:
-    """
-    Run a single forward pass through the Keras .h5 fallback model.
-
-    Args:
-        tensor: np.ndarray of shape (1, lookback, features).
-
-    Returns:
-        Predicted class integer (0 = Safe, 1 = GLOF Alert).
-    """
-    predictions = _keras_model.predict(tensor, verbose=0)
-    return int((predictions > 0.5).astype(int).flatten()[0])
+def _infer_keras(tensor: np.ndarray) -> Tuple[int, float]:
+    """Keras .h5 forward pass. Returns (predicted_class, probability)."""
+    raw  = _keras_model.predict(tensor, verbose=0)
+    prob = float(raw.flatten()[0])
+    return int(prob > 0.5), round(prob, 4)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Public API
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def predict(input_str: str, lookback_window: int = DEFAULT_LOOKBACK) -> int:
+def predict(input_str: str, lookback_window: int = DEFAULT_LOOKBACK) -> dict:
     """
-    Full inference pipeline for a single telemetry payload string.
+    Full inference pipeline.
 
-    Single-snapshot mode (standard web form):
-        The snapshot is replicated `lookback_window` times to form the minimal
-        valid look-back matrix. This preserves backward-compatibility with the
-        existing Flask POST endpoint.
-
-    Multi-snapshot mode (MQTT continuous stream):
-        Pass a newline-delimited block of `lookback_window` CSV rows;
-        each line is parsed as one time-step snapshot.
-
-    Args:
-        input_str:      Raw CSV feature string (one or multiple rows).
-        lookback_window: Number of time-steps for the rolling window tensor.
-
-    Returns:
-        int — 0 (Low Risk) or 1 (GLOF Alert).
+    Returns a rich result dict:
+        class            (int)   0 = Safe, 1 = GLOF Alert
+        message          (int)   same as class — backward-compatible key
+        probability      (float) raw sigmoid output, 0.0–1.0
+        risk_percentage  (str)   e.g. "87.3%"
+        risk_label       (str)   human-readable verdict
+        inference_ms     (float) wall-clock latency in milliseconds
+        engine           (str)   "TFLite INT8" | "Keras .h5"
+        lake_id          (str)   parsed from first feature column
+        latitude         (float|None)
+        longitude        (float|None)
     """
     log.info("[PIPELINE] Parsing telemetry payload...")
-
-    # ── Parse: single row or multi-row block ──────────────────────────────────
     lines = [l.strip() for l in input_str.strip().splitlines() if l.strip()]
 
+    # Extract location metadata before encoding transforms the values
+    raw_first = lines[0].replace('"', '').split(',')
+    metadata  = _extract_metadata(raw_first)
+
     if len(lines) == 1:
-        # Single-snapshot: replicate to fill the look-back window
-        snapshot = _parse_single_snapshot(lines[0])
-        snapshots = np.tile(snapshot, (lookback_window, 1))  # (lookback, features)
+        snapshot  = _parse_single_snapshot(lines[0])
+        snapshots = np.tile(snapshot, (lookback_window, 1))
     else:
         snapshots = np.array([_parse_single_snapshot(l) for l in lines])
 
-    log.info(
-        "[PIPELINE] Parsed %d snapshot(s). Building %d-step look-back tensor...",
-        len(lines), lookback_window,
-    )
+    log.info("[PIPELINE] Parsed %d snapshot(s). Building %d-step look-back tensor...",
+             len(lines), lookback_window)
 
-    # ── Build rolling look-back tensor ────────────────────────────────────────
-    tensor = transform_to_time_series_matrix(snapshots, lookback_window)
-    # Use only the last sample for single-shot inference
+    tensor       = transform_to_time_series_matrix(snapshots, lookback_window)
     input_tensor = tensor[[-1]]   # shape: (1, lookback_window, num_features)
 
-    log.info(
-        "[PIPELINE] Input tensor shape: %s. Invoking inference engine...",
-        input_tensor.shape,
-    )
+    log.info("[PIPELINE] Tensor shape: %s. Invoking engine...", input_tensor.shape)
 
-    # ── Engine dispatch ───────────────────────────────────────────────────────
     t_start = time.perf_counter()
 
     if _tflite_interpreter is not None:
         log.info("[ENGINE] Invoking bilstm_edge_model.tflite (INT8)...")
-        predicted_class = _infer_tflite(input_tensor)
+        predicted_class, probability = _infer_tflite(input_tensor)
         engine_label = "TFLite INT8"
     else:
-        log.info("[ENGINE] Invoking Keras .h5 fallback model...")
-        predicted_class = _infer_keras(input_tensor)
+        log.info("[ENGINE] Invoking Keras .h5 fallback...")
+        predicted_class, probability = _infer_keras(input_tensor)
         engine_label = "Keras .h5"
 
     elapsed_ms = (time.perf_counter() - t_start) * 1000
 
-    log.info(
-        "[INFERENCE] Computation executed in %.1fms via %s. "
-        "Hazard Result: Class %d (%s).",
-        elapsed_ms,
-        engine_label,
-        predicted_class,
-        "GLOF ALERT 🚨" if predicted_class == 1 else "NORMAL ✅",
+    risk_label = (
+        "⚠️ GLOF ALERT — High Risk Detected"
+        if predicted_class == 1
+        else "✅ Normal — Low Risk"
     )
 
-    return predicted_class
+    log.info(
+        "[INFERENCE] %.1fms | %s | Class %d | Probability %.4f (%.1f%%) | %s",
+        elapsed_ms, engine_label, predicted_class,
+        probability, probability * 100, risk_label,
+    )
+
+    return {
+        # Core prediction
+        "class":           predicted_class,
+        "message":         predicted_class,   # backward-compatible key
+        "probability":     probability,
+        "risk_percentage": f"{probability * 100:.1f}%",
+        "risk_label":      risk_label,
+        # Performance
+        "inference_ms":    round(elapsed_ms, 1),
+        "engine":          engine_label,
+        # Location
+        "lake_id":         metadata["lake_id"],
+        "latitude":        metadata["latitude"],
+        "longitude":       metadata["longitude"],
+    }
 
 
 def input_model(inpu: str) -> dict:
     """
-    Flask-facing entry point.  Returns a dict consumed by Jinja2 templates.
-
-    Returns:
-        {"message": 0}  → Low Risk / Safe
-        {"message": 1}  → GLOF Alert Triggered
+    Flask & MQTT-facing entry point.
+    Returns the full predict() dict on success,
+    or an error dict on failure (class = -1).
     """
     try:
-        predicted_class = predict(inpu)
-        log.info("[API] Prediction result: %d", predicted_class)
-        return {"message": predicted_class}
+        return predict(inpu)
     except ValueError as exc:
         log.error("[API] Preprocessing error: %s", exc)
-        return {"message": f"Error: {exc}"}
+        return {"class": -1, "message": f"Error: {exc}", "probability": 0.0,
+                "risk_percentage": "N/A", "risk_label": "Error", "inference_ms": 0.0,
+                "engine": "none", "lake_id": "UNKNOWN", "latitude": None, "longitude": None}
     except Exception as exc:
         log.error("[API] Unexpected inference failure: %s", exc)
-        return {"message": f"Error: {exc}"}
+        return {"class": -1, "message": f"Error: {exc}", "probability": 0.0,
+                "risk_percentage": "N/A", "risk_label": "Error", "inference_ms": 0.0,
+                "engine": "none", "lake_id": "UNKNOWN", "latitude": None, "longitude": None}
 
 
 # ─── Inline test ───────────────────────────────────────────────────────────────
@@ -342,5 +314,5 @@ if __name__ == "__main__":
         '-1.73,69,274.5,617.01,9.93,-15.3,25.21,6.35,-9.7,6.81,-9.93,756.5,'
         '144,4.3,87.1,429,15.6,414.9,15.6'
     )
-    result = input_model(SAMPLE)
-    print(result)
+    import json
+    print(json.dumps(input_model(SAMPLE), indent=2))
