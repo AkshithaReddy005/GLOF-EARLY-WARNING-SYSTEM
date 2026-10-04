@@ -1,0 +1,41 @@
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+
+# ── Virtual environments ────────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+ENV/
+
+# ── Trained model artifacts (large binary files — store with Git LFS if needed)
+*.h5
+*.tflite
+
+# ── Preprocessing artifacts
+scaler.pkl
+label_encoders.pkl
+feature_names.pkl
+scaler_new.pkl
+label_encoders_new.pkl
+feature_names_new.pkl
+
+# ── Runtime databases (generated at runtime)
+local_staging_buffer.db
+prediction_history.db
+
+# ── IDE and OS
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# ── Jupyter
+.ipynb_checkpoints/
+
+# ── Logs and temp
+*.log
+*.tmp
