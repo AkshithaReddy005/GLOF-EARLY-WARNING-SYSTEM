@@ -3,29 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About Us - Gorgeous Site</title>
+    <title>About — GLOF Early Warning System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f6f9; color: #333; }
+        .page-hero {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+                        url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1400')
+                        no-repeat center center / cover;
+            height: 220px; display: flex; align-items: center; justify-content: center;
+        }
+        .page-hero h1 { color: #fff; font-size: 2.2em; margin: 0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .content { max-width: 960px; margin: 0 auto; padding: 48px 24px 60px; }
+        .intro { font-size: 1.12em; color: #555; line-height: 1.75; margin-bottom: 40px; }
+        .section-h { color: #007acc; font-size: 1.35em; margin: 36px 0 14px; border-left: 4px solid #007acc; padding-left: 14px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 36px; }
+        .info-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.07); padding: 24px; }
+        .info-card .icon { font-size: 2.2em; margin-bottom: 10px; }
+        .info-card h3 { margin: 0 0 8px; color: #007acc; font-size: 1em; }
+        .info-card p  { margin: 0; color: #666; font-size: 0.93em; line-height: 1.6; }
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+        .tag { background: #e8f4fd; color: #1a5276; border-radius: 20px; padding: 6px 16px; font-size: 0.88em; font-weight: 600; }
+        table.data-table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+        table.data-table th { background: #007acc; color: #fff; padding: 11px 16px; text-align: left; }
+        table.data-table td { padding: 10px 16px; border-bottom: 1px solid #eef1f5; }
+        table.data-table tr:hover td { background: #f5f9ff; }
+    </style>
 </head>
 <body>
-    <header>
-        <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('about') }}">About Us</a></li>
-                <li><a href="{{ url_for('services') }}">Services</a></li>
-                <li><a href="{{ url_for('contact') }}">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+<header>
+    <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+    <nav><ul>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About Us</a></li>
+        <li><a href="{{ url_for('services') }}">Services</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+    </ul></nav>
+</header>
 
-    <section id="about">
-        <h2>About Us</h2>
-        <p>Learn more about our mission, vision, and the incredible team behind Gorgeous Site. We strive to make a positive impact.</p>
-    </section>
+<div class="page-hero"><h1>About This Project</h1></div>
 
-    <footer>
-        <p>&copy; 2024 GLOF Site. All rights reserved.</p>
-    </footer>
+<div class="content">
+    <p class="intro">
+        The <strong>GLOF Early Warning System</strong> is an AI-powered, safety-critical
+        environmental monitoring platform designed to predict Glacial Lake Outburst Floods
+        (GLOFs) before they occur. Built for the Efftronics R&amp;D evaluation programme,
+        it integrates deep learning, edge computing, and high-availability ingestion
+        infrastructure to provide actionable hazard intelligence in real time.
+    </p>
+
+    <h2 class="section-h">🏔️ The Problem We Solve</h2>
+    <p style="color:#555; line-height:1.75; margin-bottom:28px;">
+        Glacial lakes in high-altitude mountain regions — the Hindu Kush-Himalaya, Andes,
+        and Alps — are held back by natural dams of ice, rock, and glacial moraine.
+        When these dams fail, the resulting outburst flood travels downstream at catastrophic
+        speed, destroying communities, bridges, and hydropower infrastructure with almost no
+        warning. Existing systems are <em>reactive</em> — they only alert after the flood
+        has already started. Our system is <em>predictive</em>: it analyses 100+ environmental
+        parameters for any target lake and flags elevated risk <strong>before</strong> the dam fails.
+    </p>
+
+    <h2 class="section-h">🔬 What Makes This System Different</h2>
+    <div class="card-grid">
+        <div class="info-card">
+            <div class="icon">🧠</div>
+            <h3>BiLSTM Deep Learning</h3>
+            <p>A bidirectional LSTM network reads environmental parameters as temporal sequences, detecting dangerous trends building over days — not just isolated snapshots.</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">⚖️</div>
+            <h3>SMOTE + Focal Loss</h3>
+            <p>Two-layer imbalance correction: synthetic oversampling generates realistic GLOF training examples; Focal Loss forces the model to prioritise rare hazard events during training.</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">⚡</div>
+            <h3>Edge Quantisation</h3>
+            <p>The trained model is compressed to a TFLite INT8 binary (~4MB), enabling sub-50ms predictions on compact MCUs deployed directly at glacier field sites — no internet required.</p>
+        </div>
+        <div class="info-card">
+            <div class="icon">📡</div>
+            <h3>Zero Data Loss Ingestion</h3>
+            <p>An MQTT subscriber with SQLite circular buffer fallback guarantees that no sensor data is lost during storm-induced network outages at remote high-altitude sites.</p>
+        </div>
+    </div>
+
+    <h2 class="section-h">📊 Dataset Sources</h2>
+    <table class="data-table">
+        <thead><tr><th>Feature Category</th><th>Source</th><th>Coverage</th></tr></thead>
+        <tbody>
+            <tr><td>Glacier / Lake Identity &amp; Morphology</td><td>GLIMS (NASA / NSIDC)</td><td>Global</td></tr>
+            <tr><td>Bedrock Lithology</td><td>GLiM — Global Lithological Map (Hartmann &amp; Moosdorf, 2012)</td><td>Global</td></tr>
+            <tr><td>Himalayan Tectonic Structure</td><td>Hodges &amp; Yin geological frameworks</td><td>HKH region</td></tr>
+            <tr><td>Bioclimatic Variables (bio1–bio19)</td><td>WorldClim Global Climate Data</td><td>Global (1-km resolution)</td></tr>
+            <tr><td>Seismic Activity</td><td>USGS Earthquake Catalog</td><td>Global</td></tr>
+            <tr><td>GLOF Event History (labels)</td><td>Verified historical flood records</td><td>HKH + Andes</td></tr>
+        </tbody>
+    </table>
+
+    <h2 class="section-h">🛠️ Technology Stack</h2>
+    <div class="tech-stack">
+        <span class="tag">Python 3.10+</span>
+        <span class="tag">TensorFlow 2.x</span>
+        <span class="tag">TensorFlow Lite</span>
+        <span class="tag">Flask</span>
+        <span class="tag">Pandas / NumPy</span>
+        <span class="tag">scikit-learn</span>
+        <span class="tag">imbalanced-learn (SMOTE)</span>
+        <span class="tag">paho-mqtt</span>
+        <span class="tag">SQLite</span>
+        <span class="tag">Plotly.js</span>
+        <span class="tag">Leaflet.js</span>
+        <span class="tag">joblib</span>
+    </div>
+</div>
+
+<footer><p>&copy; 2025 GLOF Early Warning System &nbsp;|&nbsp; Efftronics R&amp;D Evaluation Build</p></footer>
 </body>
 </html>

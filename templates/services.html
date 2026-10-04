@@ -3,29 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services - Gorgeous Site</title>
+    <title>Services — GLOF Early Warning System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f6f9; color: #333; }
+        .page-hero {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+                        url('https://images.unsplash.com/photo-1548266652-99cf27701ced?w=1400')
+                        no-repeat center center / cover;
+            height: 220px; display: flex; align-items: center; justify-content: center;
+        }
+        .page-hero h1 { color: #fff; font-size: 2.2em; margin: 0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .content { max-width: 1040px; margin: 0 auto; padding: 48px 24px 60px; }
+        .intro { font-size: 1.1em; color: #555; line-height: 1.75; margin-bottom: 40px; }
+        .section-h { color: #007acc; font-size: 1.35em; margin: 36px 0 16px; border-left: 4px solid #007acc; padding-left: 14px; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; margin-bottom: 40px; }
+        .service-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.07); padding: 28px; }
+        .service-card .icon { font-size: 2.4em; margin-bottom: 12px; }
+        .service-card h3 { margin: 0 0 10px; color: #007acc; font-size: 1.05em; }
+        .service-card p  { margin: 0; color: #666; font-size: 0.93em; line-height: 1.65; }
+        .service-card ul { margin: 10px 0 0; padding-left: 18px; color: #666; font-size: 0.92em; line-height: 1.7; }
+        .api-box { background: #f0f7ff; border: 1px solid #cce0f5; border-radius: 10px; padding: 22px 26px; margin-bottom: 24px; }
+        .api-box h3 { margin-top: 0; color: #1a5276; font-size: 1em; }
+        .api-box pre { background: #1e2a38; color: #a8d8ea; padding: 16px; border-radius: 8px;
+                       font-size: 0.87em; overflow-x: auto; margin: 12px 0 0; }
+        .endpoint { display: inline-block; background: #007acc; color: #fff;
+                    border-radius: 4px; padding: 2px 10px; font-family: monospace;
+                    font-size: 0.88em; font-weight: 700; margin-right: 8px; }
+        .method-post { background: #27ae60; }
+        .method-get  { background: #2980b9; }
+    </style>
 </head>
 <body>
-    <header>
-        <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
-        <nav>
+<header>
+    <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+    <nav><ul>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About Us</a></li>
+        <li><a href="{{ url_for('services') }}">Services</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+    </ul></nav>
+</header>
+
+<div class="page-hero"><h1>Our Services</h1></div>
+
+<div class="content">
+    <p class="intro">
+        The GLOF Early Warning System exposes its predictive capabilities through
+        multiple interfaces — a visual analytics dashboard, a REST JSON API, a batch
+        assessment pipeline, and an edge-deployable inference engine — making it
+        accessible to field scientists, disaster response authorities, and automated
+        monitoring platforms alike.
+    </p>
+
+    <h2 class="section-h">🖥️ Core Services</h2>
+    <div class="services-grid">
+        <div class="service-card">
+            <div class="icon">🔬</div>
+            <h3>Single Lake Risk Assessment</h3>
+            <p>Submit a comma-separated feature string for any glacial lake through the web dashboard. The BiLSTM pipeline returns a risk class, probability score, and visual gauge within milliseconds.</p>
             <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('about') }}">About Us</a></li>
-                <li><a href="{{ url_for('services') }}">Services</a></li>
-                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+                <li>Real-time BiLSTM inference</li>
+                <li>Risk probability (0–100%)</li>
+                <li>Plotly gauge visualisation</li>
+                <li>Lake location map (Leaflet)</li>
             </ul>
-        </nav>
-    </header>
+        </div>
 
-    <section id="services">
-        <h2>Our Services</h2>
-        <p>We offer a range of services designed to meet your needs. From consultations to personalized solutions, we have you covered.</p>
-    </section>
+        <div class="service-card">
+            <div class="icon">📂</div>
+            <h3>Batch CSV Lake Assessment</h3>
+            <p>Upload a full CSV file containing hundreds of lake records. The system processes every row through the inference pipeline and returns a downloadable results CSV with predictions appended.</p>
+            <ul>
+                <li>Bulk processing — no row limit</li>
+                <li>Risk_Class + Risk_Probability columns</li>
+                <li>Original columns preserved</li>
+                <li>Downloadable CSV output</li>
+            </ul>
+        </div>
 
-    <footer>
-        <p>&copy; 2024 GLOF Site. All rights reserved.</p>
-    </footer>
+        <div class="service-card">
+            <div class="icon">⚡</div>
+            <h3>Edge Inference (TFLite)</h3>
+            <p>The trained model is compiled to a TFLite INT8 binary for deployment on compact field microcontrollers at glacier sites. No internet connection required — sub-50ms on-device predictions.</p>
+            <ul>
+                <li>~4MB model footprint</li>
+                <li>Sub-50ms inference latency</li>
+                <li>Runs offline on Raspberry Pi / STM32</li>
+                <li>Generated via <code>quantize.py</code></li>
+            </ul>
+        </div>
+
+        <div class="service-card">
+            <div class="icon">📡</div>
+            <h3>MQTT Sensor Ingestion</h3>
+            <p>A high-availability MQTT subscriber with SQLite circular buffer fallback continuously ingests field sensor telemetry. Zero data loss is guaranteed even during complete network outages.</p>
+            <ul>
+                <li>Publish/subscribe on <code>glof/telemetry</code></li>
+                <li>Offline SQLite disk buffer</li>
+                <li>Auto-drain on reconnect</li>
+                <li>10,000-row circular cap</li>
+            </ul>
+        </div>
+
+        <div class="service-card">
+            <div class="icon">📊</div>
+            <h3>Prediction History &amp; Analytics</h3>
+            <p>Every assessment is logged to a persistent SQLite database. The dashboard displays a live history table and aggregate statistics — total predictions, alert rate, and average inference latency.</p>
+            <ul>
+                <li>Per-prediction SQLite records</li>
+                <li>Aggregate stats (alert rate, avg ms)</li>
+                <li>Filterable live history table</li>
+                <li>Accessible via <code>/api/history</code></li>
+            </ul>
+        </div>
+
+        <div class="service-card">
+            <div class="icon">🔗</div>
+            <h3>REST JSON API</h3>
+            <p>A fully documented REST API allows external systems, mobile apps, and automated pipelines to submit lake feature strings and receive structured JSON prediction responses.</p>
+            <ul>
+                <li><code>POST /api/predict</code></li>
+                <li><code>GET /api/history</code></li>
+                <li><code>GET /api/stats</code></li>
+                <li><code>GET /health</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2 class="section-h">🔗 REST API Reference</h2>
+
+    <div class="api-box">
+        <h3><span class="endpoint method-post">POST</span> /api/predict — Single Lake Prediction</h3>
+        <pre>curl -X POST http://127.0.0.1:5000/api/predict \
+     -H "Content-Type: application/json" \
+     -d '{"input_string": "\"43\",\"GL093898E30128N\",30.128,93.898,..."}'
+
+Response 200:
+{
+  "class": 1,
+  "probability": 0.8731,
+  "risk_percentage": "87.3%",
+  "risk_label": "⚠️ GLOF ALERT — High Risk Detected",
+  "inference_ms": 14.2,
+  "engine": "TFLite INT8",
+  "lake_id": "43",
+  "latitude": 30.128,
+  "longitude": 93.898
+}</pre>
+    </div>
+
+    <div class="api-box">
+        <h3><span class="endpoint method-get">GET</span> /api/history — Recent Prediction Log</h3>
+        <pre>curl http://127.0.0.1:5000/api/history?limit=5
+
+Response 200:
+{
+  "count": 5,
+  "predictions": [
+    { "id": 12, "timestamp": "2025-10-04 18:22:11", "lake_id": "43",
+      "latitude": 30.128, "longitude": 93.898, "risk_class": 1,
+      "risk_probability": 0.8731, "inference_ms": 14.2, "source": "web" },
+    ...
+  ]
+}</pre>
+    </div>
+
+    <div class="api-box">
+        <h3><span class="endpoint method-get">GET</span> /api/stats — Aggregate Statistics</h3>
+        <pre>curl http://127.0.0.1:5000/api/stats
+
+Response 200:
+{
+  "total_predictions": 47,
+  "total_alerts": 8,
+  "alert_rate": 0.1702,
+  "avg_probability": 0.3241,
+  "avg_inference_ms": 18.7
+}</pre>
+    </div>
+</div>
+
+<footer><p>&copy; 2025 GLOF Early Warning System &nbsp;|&nbsp; Efftronics R&amp;D Evaluation Build</p></footer>
 </body>
 </html>
