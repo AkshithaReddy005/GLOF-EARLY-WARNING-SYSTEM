@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Lake Assessment — GLOF EWS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0; padding: 0; color: #333;
+        }
+        .batch-wrapper {
+            max-width: 860px;
+            margin: 40px auto;
+            padding: 0 20px 60px;
+        }
+        .page-title {
+            font-size: 2em;
+            color: #007acc;
+            margin-bottom: 6px;
+        }
+        .page-subtitle {
+            color: #666;
+            font-size: 1em;
+            margin-bottom: 36px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            padding: 32px;
+            margin-bottom: 28px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #007acc;
+            font-size: 1.2em;
+        }
+        .upload-zone {
+            border: 2px dashed #b0c8e0;
+            border-radius: 10px;
+            padding: 36px 24px;
+            text-align: center;
+            background: #f0f7ff;
+            transition: border-color 0.2s;
+        }
+        .upload-zone:hover { border-color: #007acc; }
+        .upload-zone input[type="file"] {
+            display: block;
+            margin: 0 auto 20px;
+            font-size: 1em;
+            color: #555;
+        }
+        .btn-primary {
+            background: #007acc;
+            color: #fff;
+            border: none;
+            padding: 13px 36px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover { background: #005ea1; transform: scale(1.02); }
+        .alert-error {
+            background: #fdecea;
+            border: 1px solid #f5c6c2;
+            color: #c0392b;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 22px;
+            font-weight: 500;
+        }
+        .format-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92em;
+            margin-top: 12px;
+        }
+        .format-table th {
+            background: #007acc;
+            color: #fff;
+            padding: 10px 14px;
+            text-align: left;
+        }
+        .format-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #eee;
+        }
+        .format-table tr:hover td { background: #f5f9ff; }
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.82em;
+            font-weight: 600;
+        }
+        .tag-new { background: #d5f5e3; color: #1e8449; }
+        .tag-orig { background: #eaf2fb; color: #1a5276; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 22px;
+            color: #007acc;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('about') }}">About Us</a></li>
+                <li><a href="{{ url_for('services') }}">Services</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="batch-wrapper">
+        <a href="{{ url_for('index') }}" class="back-link">← Back to Dashboard</a>
+
+        <h1 class="page-title">📂 Batch Lake Assessment</h1>
+        <p class="page-subtitle">
+            Upload a CSV file containing one or more glacial lake feature rows.
+            The system will run the BiLSTM inference pipeline on every row and return
+            a downloadable results CSV with risk predictions appended.
+        </p>
+
+        {% if error %}
+        <div class="alert-error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <!-- Upload Form -->
+        <div class="card">
+            <h2>Upload Dataset CSV</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="upload-zone">
+                    <p style="color:#555; margin-bottom:14px;">
+                        Select a CSV file with the same column structure as <code>GLOFData.csv</code><br>
+                        (all feature columns present; GLOF and Date columns optional)
+                    </p>
+                    <input type="file" name="csv_file" accept=".csv" required>
+                    <button type="submit" class="btn-primary">🚀 Run Batch Assessment</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Output columns info -->
+        <div class="card">
+            <h2>Output Columns Added to Results CSV</h2>
+            <table class="format-table">
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>Risk_Class</code> <span class="tag tag-new">NEW</span></td>
+                        <td>Integer</td>
+                        <td>0 = Low Risk / Safe &nbsp;|&nbsp; 1 = GLOF Alert</td>
+                    </tr>
+                    <tr>
+                        <td><code>Risk_Probability</code> <span class="tag tag-new">NEW</span></td>
+                        <td>Float (0–1)</td>
+                        <td>Raw sigmoid output — confidence score of GLOF risk</td>
+                    </tr>
+                    <tr>
+                        <td><code>Risk_Percentage</code> <span class="tag tag-new">NEW</span></td>
+                        <td>String</td>
+                        <td>Human-readable probability, e.g. <code>87.3%</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>Risk_Label</code> <span class="tag tag-new">NEW</span></td>
+                        <td>String</td>
+                        <td>Full verdict string: <em>⚠️ GLOF ALERT</em> or <em>✅ Normal</em></td>
+                    </tr>
+                    <tr>
+                        <td><code>Inference_ms</code> <span class="tag tag-new">NEW</span></td>
+                        <td>Float</td>
+                        <td>Inference wall-clock time in milliseconds</td>
+                    </tr>
+                    <tr>
+                        <td><code>Engine</code> <span class="tag tag-new">NEW</span></td>
+                        <td>String</td>
+                        <td>Model engine used: <em>TFLite INT8</em> or <em>Keras .h5</em></td>
+                    </tr>
+                    <tr>
+                        <td><em>All original columns</em> <span class="tag tag-orig">PRESERVED</span></td>
+                        <td>—</td>
+                        <td>All input columns are retained in the output unchanged</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- API Alternative -->
+        <div class="card">
+            <h2>Programmatic Access — REST API</h2>
+            <p>For integration with external systems or automated pipelines, use the JSON REST endpoint:</p>
+            <pre style="background:#f4f6f9; padding:16px; border-radius:8px; font-size:0.92em; overflow:auto;">POST /api/predict
+Content-Type: application/json
+
+{
+  "input_string": "&lt;comma-separated feature string&gt;"
+}
+
+→ Response:
+{
+  "class": 1,
+  "probability": 0.8731,
+  "risk_percentage": "87.3%",
+  "risk_label": "⚠️ GLOF ALERT — High Risk Detected",
+  "inference_ms": 14.2,
+  "engine": "TFLite INT8",
+  "lake_id": "43",
+  "latitude": 30.128,
+  "longitude": 93.898
+}</pre>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 GLOF Early Warning System. Built for Efftronics R&amp;D Evaluation.</p>
+    </footer>
+</body>
+</html>
