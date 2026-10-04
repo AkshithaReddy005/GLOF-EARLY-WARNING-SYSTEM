@@ -4,375 +4,558 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title if title else "GLOF EWS" }}</title>
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Scripts -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
+        /* ── Base ─────────────────────────────────────────────────────────── */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            color: #333;
+            margin: 0; padding: 0; color: #333;
             background-color: #f4f6f9;
         }
         .logo {
-    height: 50px; /* Adjust size as needed */
-    margin-right: 20px; /* Space between logo and navigation */
-    position: absolute;
-    top: 10px; /* Adjust based on your header padding */
-    left: 20px; /* Adjust based on your header padding */
-        }
-        .flex-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 20px;
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
+            height: 50px; margin-right: 20px;
+            position: absolute; top: 10px; left: 20px;
         }
 
-        .controls {
-            width: 30%;
-            padding: 20px;
-            background: linear-gradient(135deg, #f9f9f9, #e2f0f4);
-            box-sizing: border-box;
-            overflow-y: auto;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        /* ── Hero ─────────────────────────────────────────────────────────── */
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                        url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1400')
+                        no-repeat center center / cover;
+            height: 320px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: #fff;
+        }
+        .hero h1 { font-size: 2.8em; margin: 0; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .hero p  { font-size: 1.1em; margin: 10px 0 0; opacity: 0.9; }
+
+        /* ── Layout ───────────────────────────────────────────────────────── */
+        .main-wrapper {
+            max-width: 1280px; margin: 0 auto; padding: 28px 20px 60px;
+        }
+        .top-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 22px; margin-bottom: 22px;
+        }
+        .card {
+            background: #fff; border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08); padding: 24px;
+        }
+        .card h2 { margin-top: 0; color: #007acc; font-size: 1.1em; }
+        .section-title {
+            font-size: 1.4em; color: #007acc;
+            margin: 32px 0 14px; font-weight: 700;
         }
 
-        .controls h2 {
-            margin-top: 0;
-            color: #4a90e2;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        /* ── Controls panel ───────────────────────────────────────────────── */
+        .controls select, .controls input[type="date"] {
+            width: 100%; padding: 10px 12px; margin-top: 8px;
+            border-radius: 6px; border: 1px solid #d0dce8;
+            font-size: 0.95em; background: #f8fbff; box-sizing: border-box;
         }
+        .controls label { margin-top: 14px; display: block; color: #555; font-size: 0.9em; }
+        .btn { width: 100%; padding: 11px; margin-top: 12px; border: none;
+               border-radius: 6px; font-size: 1em; cursor: pointer; font-weight: 600;
+               transition: background 0.2s, transform 0.15s; }
+        .btn-blue  { background: #007acc; color: #fff; }
+        .btn-blue:hover  { background: #005ea1; transform: scale(1.02); }
+        .btn-green { background: #27ae60; color: #fff; }
+        .btn-green:hover { background: #1e8449; transform: scale(1.02); }
 
-        .controls label {
-            margin-top: 10px;
-            display: block;
-            color: #555;
-        }
-
-        .controls select, .controls input {
-            width: calc(100% - 20px);
-            padding: 12px;
-            margin-top: 8px;
-            border-radius: 6px;
-            border: 1px solid #ddd;
-            box-sizing: border-box;
-            background: #ffffff;
-            font-size: 16px;
-        }
-
-        .controls select {
-            background: linear-gradient(135deg, #e2f0f4, #f9f9f9);
-        }
-
-        .controls input {
-            background: linear-gradient(135deg, #f9f9f9, #ffffff);
-        }
-
-        .controls button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 12px;
-            border: none;
-            border-radius: 6px;
-            background: #4a90e2;
-            color: #fff;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .controls button:hover {
-            background: #357abd;
-            transform: scale(1.02);
-        }
-
-        .chart-container {
-            width: 65%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 20px;
-            background: #ffffff;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-        }
-
-        #charts {
-            width: 100%;
-            height: 60%;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .alerts {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            overflow-y: auto;
-            height: 40%;
-            border: 1px solid #e2e2e2;
-        }
-
-        .alerts h3 {
-            margin-top: 0;
-            color: #4a90e2;
-        }
-
+        /* ── Alert feed ───────────────────────────────────────────────────── */
         .alert-item {
-            background: #fafafa;
-            border: 1px solid #e2e2e2;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s, transform 0.2s;
+            background: #fafafa; border: 1px solid #e8edf2; border-radius: 8px;
+            padding: 12px 14px; margin-bottom: 10px;
+            transition: background 0.2s;
+        }
+        .alert-item:hover { background: #f0f7ff; }
+        .alert-date { font-size: 0.82em; color: #999; }
+        .alert-type { font-weight: 700; }
+        .alert-type.high   { color: #c0392b; }
+        .alert-type.medium { color: #d68910; }
+        .alert-type.low    { color: #1e8449; }
+        .alert-message  { margin-top: 4px; font-size: 0.93em; color: #555; }
+        .alert-location { margin-top: 6px; font-size: 0.85em; color: #333; font-weight: 600; }
+        .filter-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .filter-row label { color: #555; font-size: 0.9em; }
+        .filter-row select { padding: 7px 10px; border-radius: 6px; border: 1px solid #d0dce8; }
+
+        /* ── Prediction form ──────────────────────────────────────────────── */
+        .predict-form textarea {
+            width: 100%; box-sizing: border-box; padding: 12px;
+            border: 1px solid #d0dce8; border-radius: 8px;
+            font-family: 'Courier New', monospace; font-size: 0.85em;
+            resize: vertical; min-height: 90px;
+            transition: border-color 0.2s;
+        }
+        .predict-form textarea:focus { border-color: #007acc; outline: none; }
+        .form-row { display: flex; gap: 10px; margin-top: 10px; }
+        .form-row .btn { flex: 1; margin-top: 0; }
+        .batch-link {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: #007acc; text-decoration: none; font-weight: 600;
+            font-size: 0.92em; padding: 9px 16px; border: 1.5px solid #007acc;
+            border-radius: 6px; transition: background 0.2s;
+        }
+        .batch-link:hover { background: #f0f7ff; }
+
+        /* ── Result display ───────────────────────────────────────────────── */
+        .result-section { margin-top: 20px; }
+        .result-badge {
+            display: flex; align-items: center; gap: 14px;
+            padding: 18px 22px; border-radius: 10px; margin-bottom: 16px;
+            font-size: 1.15em; font-weight: 700;
+        }
+        .result-badge.alert {
+            background: #fdecea; border: 2px solid #e74c3c; color: #c0392b;
+        }
+        .result-badge.safe {
+            background: #eafaf1; border: 2px solid #2ecc71; color: #1e8449;
+        }
+        .result-badge .badge-icon { font-size: 2em; }
+        .result-meta {
+            display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+        }
+        .meta-pill {
+            background: #f0f7ff; border: 1px solid #cce0f5;
+            border-radius: 20px; padding: 5px 14px;
+            font-size: 0.85em; color: #1a5276;
+        }
+        .result-charts {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        #risk-gauge { height: 260px; }
+        #lake-map   { height: 260px; border-radius: 10px;
+                      border: 1px solid #d0dce8; z-index: 0; }
+        .no-location {
+            height: 260px; display: flex; align-items: center; justify-content: center;
+            background: #f8fbff; border-radius: 10px; border: 1px dashed #b0c8e0;
+            color: #999; font-size: 0.95em;
         }
 
-        .alert-item:hover {
-            background: #f0f8ff;
-            transform: scale(1.01);
+        /* ── History table ────────────────────────────────────────────────── */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+        .history-table th {
+            background: #007acc; color: #fff; padding: 10px 14px; text-align: left;
         }
-
-        .alert-date {
-            font-size: 0.9em;
-            color: #888;
+        .history-table td { padding: 9px 14px; border-bottom: 1px solid #eef1f5; }
+        .history-table tr:hover td { background: #f5f9ff; }
+        .badge-alert { background: #fdecea; color: #c0392b; border-radius: 12px;
+                       padding: 2px 10px; font-weight: 700; font-size: 0.85em; }
+        .badge-safe  { background: #eafaf1; color: #1e8449; border-radius: 12px;
+                       padding: 2px 10px; font-weight: 700; font-size: 0.85em; }
+        .no-history  { text-align: center; padding: 30px; color: #999;
+                       font-style: italic; }
+        .stats-strip {
+            display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
         }
-
-        .alert-type {
-            font-weight: bold;
-            color: #e94e77;
+        .stat-card {
+            flex: 1; min-width: 130px; background: #fff; border-radius: 10px;
+            padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
         }
+        .stat-card .val { font-size: 1.8em; font-weight: 700; color: #007acc; }
+        .stat-card .lbl { font-size: 0.8em; color: #888; margin-top: 4px; }
 
-        .alert-message {
-            margin-top: 5px;
-            font-size: 1em;
-            color: #555;
-        }
-
-        .alert-location {
-            font-size: 0.9em;
-            color: #333;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        .filter-controls {
-            margin-bottom: 15px;
-        }
-
-        .filter-controls label {
-            margin-right: 10px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .flex-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .controls, .chart-container {
-                width: 100%;
-                margin-bottom: 20px;
-            }
-        }
-
+        /* ── Sign-in float ────────────────────────────────────────────────── */
         .signin-container {
-            position: fixed;
-            right: 20px;
-            top: 20px;
-            background: #007acc;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            transition: opacity 0.3s ease;
+            position: fixed; right: 20px; top: 20px;
+            background: #007acc; padding: 9px 20px;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            transition: opacity 0.3s;
         }
+        .signin-container a { color: #fff; text-decoration: none;
+                              font-weight: 700; font-size: 0.95em; }
+        .signin-container a:hover { color: #ffd700; }
 
-        .signin-container a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 16px;
-            transition: color 0.3s ease;
-        }
-
-        .signin-container a:hover {
-            color: #ffd700;
+        /* ── Responsive ───────────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .top-grid { grid-template-columns: 1fr; }
+            .result-charts { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('index') }}">Home</a></li>
-                <li><a href="{{ url_for('about') }}">About Us</a></li>
-                <li><a href="{{ url_for('services') }}">Services</a></li>
-                <li><a href="{{ url_for('contact') }}">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <div class="hero">
-        <h1>Glaciers Outburst Early Warning System</h1>
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+    <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About Us</a></li>
+            <li><a href="{{ url_for('services') }}">Services</a></li>
+            <li><a href="{{ url_for('contact') }}">Contact</a></li>
+        </ul>
+    </nav>
+</header>
+
+<!-- ── Hero ────────────────────────────────────────────────────────────────── -->
+<div class="hero">
+    <div>
+        <h1>🌊 Glacier Outburst Early Warning System</h1>
+        <p>AI-powered GLOF risk prediction · Real-time analytics · Edge-deployable inference</p>
     </div>
+</div>
 
-    <section id="home">
-        <h2>GLOF</h2>
-        <p>Our system utilizes advanced technology to monitor and predict glacier outbursts, providing timely warnings and enhancing safety for communities at risk.</p>
-    </section>
+<!-- ── Sign-in float ───────────────────────────────────────────────────────── -->
+<div class="signin-container" id="signin">
+    <a href="{{ url_for('sign') }}" target="_blank">Sign In</a>
+</div>
 
-    <div class="signin-container" id="signin">
-        <a href="{{ url_for('sign') }}" target="_blank">Sign In</a>
-    </div>
+<!-- ── Main content ────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
 
-    <h2 style="text-align:center;">Analytics Dashboard</h2>
+    <!-- ── Top grid: Controls | Chart+Alerts ─────────────────────────────── -->
+    <div class="top-grid">
 
-    <div class="flex-container">
-        <div class="controls">
-            <h2>Data Controls</h2>
-            <label for="data-select">Choose data to display:</label>
+        <!-- Controls panel -->
+        <div class="card controls">
+            <h2>📊 Data Controls</h2>
+            <label for="data-select">Choose parameter to display:</label>
             <select id="data-select">
-                <!-- Updated options based on the dataset -->
-                <option value="altitude">Altitude</option>
-                <option value="area">Glacier Area</option>
-                <!-- Add more options as necessary -->
+                <option value="seismic">Seismic Activity</option>
+                <option value="temperature">Temperature Trend</option>
+                <option value="water-level">Lake Water Level</option>
+                <option value="dam-stability">Dam Stability Index</option>
             </select>
             <label for="start-date">Start Date:</label>
             <input type="date" id="start-date">
             <label for="end-date">End Date:</label>
             <input type="date" id="end-date">
-            <button id="download-data">Download Data</button>
+            <button class="btn btn-blue" id="refresh-chart">🔄 Refresh Chart</button>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+            <h2>🔗 Quick Links</h2>
+            <a href="{{ url_for('predict_batch') }}" class="batch-link">
+                📂 Batch Lake Assessment
+            </a>
+            <a href="/api/stats" class="batch-link" style="margin-top:8px;">
+                📈 Live API Stats
+            </a>
         </div>
 
-        <div class="chart-container">
-            <div id="charts"></div>
-            <div class="alerts">
-                <div class="filter-controls">
-                    <label for="severity-select">Filter by severity:</label>
+        <!-- Chart + Alert feed -->
+        <div class="card">
+            <div id="monitoring-chart" style="height:260px;"></div>
+
+            <div style="margin-top: 20px;">
+                <div class="filter-row">
+                    <label for="severity-select">Filter alerts:</label>
                     <select id="severity-select">
                         <option value="all">All</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
                         <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
                     </select>
                 </div>
-                <h3>Current & Previous Alerts</h3>
-                <div id="alerts-list">
-                    <!-- Alerts will be inserted here by JavaScript -->
+                <h3 style="margin:0 0 10px; color:#007acc;">📡 Current &amp; Previous Alerts</h3>
+                <div id="alerts-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Prediction form ───────────────────────────────────────────────── -->
+    <h2 class="section-title">🔬 Single Lake Risk Assessment</h2>
+    <div class="card predict-form">
+        <p style="margin-top:0; color:#666; font-size:0.95em;">
+            Paste a comma-separated feature string for one glacial lake.
+            The system will run the full preprocessing and BiLSTM inference pipeline
+            and display the risk probability, a visual gauge, and lake location below.
+        </p>
+        <form method="POST" action="{{ url_for('index') }}">
+            <textarea name="input_string" id="input_string" placeholder='e.g. "43","GL093898E30128N",30.128,93.898,"M(e)","Brahmaputra",...' required>{% if results and results.lake_id %}{% endif %}</textarea>
+            <div class="form-row">
+                <button type="submit" class="btn btn-blue">⚡ Analyse Lake</button>
+                <a href="{{ url_for('predict_batch') }}" class="batch-link">📂 Batch Upload</a>
+            </div>
+        </form>
+
+        {% if error %}
+        <div style="margin-top:14px; background:#fdecea; border:1px solid #f5c6c2;
+                    color:#c0392b; border-radius:8px; padding:12px 16px; font-weight:500;">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- ── Result display ──────────────────────────────────────────────── -->
+        {% if results and results.class is defined and results.class != -1 %}
+        <div class="result-section">
+
+            <!-- Verdict badge -->
+            <div class="result-badge {{ 'alert' if results.class == 1 else 'safe' }}">
+                <span class="badge-icon">{{ '🚨' if results.class == 1 else '✅' }}</span>
+                <div>
+                    <div>{{ results.risk_label }}</div>
+                    <div style="font-size:0.72em; font-weight:400; margin-top:3px; opacity:0.8;">
+                        Lake ID: {{ results.lake_id }} &nbsp;|&nbsp;
+                        Engine: {{ results.engine }}
+                    </div>
                 </div>
             </div>
-            <h2>Submit Your Input</h2>
-                    <form method="POST" action="{{ url_for('index') }}">
-                        <div class="flex-container">
-                            <label for="input_string">Input:</label>
-                            <textarea name="input_string" id="input_string" rows="4" cols="50" required></textarea>
-                            <button type="submit">Submit</button>
-                        </div>
-                    </form>
 
-                    {% if results %}
-                        <h2>Results</h2>
-                        <p style="font-weight: bold; font-size: 1.5em; color: #333;">
-                            {{ results.message }}
-                        </p>
-                    {% endif %}
+            <!-- Metadata pills -->
+            <div class="result-meta">
+                <span class="meta-pill">🎯 Risk Probability: <strong>{{ results.risk_percentage }}</strong></span>
+                <span class="meta-pill">⚡ Inference: <strong>{{ results.inference_ms }}ms</strong></span>
+                {% if results.latitude %}
+                <span class="meta-pill">📍 Lat: <strong>{{ results.latitude }}</strong></span>
+                <span class="meta-pill">📍 Lon: <strong>{{ results.longitude }}</strong></span>
+                {% endif %}
+            </div>
 
-                    {% if error %}
-                        <p>Error: {{ error }}</p>
+            <!-- Gauge + Map -->
+            <div class="result-charts">
+                <div class="card" style="padding:0; overflow:hidden;">
+                    <div id="risk-gauge"></div>
+                </div>
+                <div class="card" style="padding:0; overflow:hidden;">
+                    {% if results.latitude and results.longitude %}
+                    <div id="lake-map"></div>
+                    {% else %}
+                    <div class="no-location">
+                        📍 Lake coordinates not available in this input
+                    </div>
                     {% endif %}
+                </div>
+            </div>
         </div>
-                        
+        {% endif %}
     </div>
-    
-    <script>
-     function updateChart(selectedValue) {
-            var startDate = document.getElementById('start-date').value;
-            var endDate = document.getElementById('end-date').value;
 
-            // Simulate filtering data by date range
-            var filteredData = {
-                'seismic': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [0, 1, 0]}],
-                'temperature': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [20, 22, 19]}],
-                'water-level': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [100, 105, 102]}],
-                'dam-stability': [{x: ['2024-01-01', '2024-01-02', '2024-01-03'], y: [90, 85, 88]}]
-            };
+    <!-- ── Prediction history ─────────────────────────────────────────────── -->
+    <h2 class="section-title">🕒 Prediction History</h2>
 
-            var data = filteredData[selectedValue];
-            var layout = {
-                title: 'GLOF Monitoring Data',
-                xaxis: {title: 'Date'},
-                yaxis: {title: 'Value'}
-            };
+    <!-- Stats strip -->
+    <div class="stats-strip" id="stats-strip">
+        <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Total Assessments</div></div>
+        <div class="stat-card"><div class="val" id="stat-alerts">—</div><div class="lbl">GLOF Alerts Triggered</div></div>
+        <div class="stat-card"><div class="val" id="stat-alert-rate">—</div><div class="lbl">Alert Rate</div></div>
+        <div class="stat-card"><div class="val" id="stat-avg-ms">—</div><div class="lbl">Avg Inference (ms)</div></div>
+    </div>
 
-            Plotly.newPlot('charts', data, layout);
-        }
+    <div class="card">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Lake ID</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Risk Class</th>
+                    <th>Probability</th>
+                    <th>Inference (ms)</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody id="history-tbody">
+                <tr><td colspan="9" class="no-history">Loading history...</td></tr>
+            </tbody>
+        </table>
+    </div>
 
-        function displayAlerts(severityFilter = 'all') {
-            var alerts = [
-                {type: 'Warning', severity: 'High', date: '2024-08-28', time: '14:30', message: 'High water level detected in Glacial Lake Alpha.', location: 'Glacial Lake Alpha, Region X, Latitude 45.123, Longitude -120.456'},
-                {type: 'Alert', severity: 'Medium', date: '2024-08-27', time: '09:00', message: 'Temperature fluctuation observed in Glacial Lake Beta.', location: 'Glacial Lake Beta, Region Y, Latitude 46.789, Longitude -121.654'},
-                // Add more alerts as needed
-            ];
+</div><!-- /.main-wrapper -->
 
-            var filteredAlerts = alerts.filter(alert => severityFilter === 'all' || alert.severity.toLowerCase() === severityFilter.toLowerCase());
-            var alertsList = document.getElementById('alerts-list');
-            alertsList.innerHTML = '';
+<footer>
+    <p>&copy; 2025 GLOF Early Warning System &nbsp;|&nbsp; Efftronics R&amp;D Evaluation Build</p>
+</footer>
 
-            filteredAlerts.forEach(alert => {
-                var alertDiv = document.createElement('div');
-                alertDiv.className = 'alert-item';
-                alertDiv.innerHTML = `
-                    <div class="alert-date">${alert.date} ${alert.time}</div>
-                    <div class="alert-type">${alert.type} (${alert.severity})</div>
-                    <div class="alert-message">${alert.message}</div>
-                    <div class="alert-location">${alert.location}</div>
-                `;
-                alertsList.appendChild(alertDiv);
-            });
-        }
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!--  JavaScript                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Monitoring chart ──────────────────────────────────────────────────────── */
+const mockData = {
+    seismic:       { y: [0,0,1,0,2,1,0,3,1,0], name: 'Seismic Events', color: '#e74c3c' },
+    temperature:   { y: [12,13,13,14,15,14,16,17,16,18], name: 'Temperature (°C)', color: '#e67e22' },
+    'water-level': { y: [98,99,100,102,104,103,105,107,106,109], name: 'Water Level (m)', color: '#2980b9' },
+    'dam-stability':{ y: [95,94,93,92,91,90,89,88,87,85], name: 'Dam Stability Index', color: '#27ae60' },
+};
+const dates = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'];
 
-        // Initialize chart and alerts
-        updateChart('seismic');
-        displayAlerts();
+function updateChart(key) {
+    const d = mockData[key] || mockData.seismic;
+    Plotly.newPlot('monitoring-chart', [{
+        x: dates, y: d.y, type: 'scatter', mode: 'lines+markers',
+        name: d.name,
+        line: { color: d.color, width: 2 },
+        marker: { color: d.color, size: 6 },
+        fill: 'tozeroy', fillcolor: d.color.replace(')', ',0.08)').replace('rgb', 'rgba'),
+    }], {
+        title: { text: d.name + ' — 10-Month Trend', font: { size: 14, color: '#333' } },
+        xaxis: { title: 'Month' },
+        yaxis: { title: 'Value' },
+        margin: { t: 40, l: 50, r: 20, b: 40 },
+        paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+    }, { responsive: true, displayModeBar: false });
+}
+updateChart('seismic');
+document.getElementById('data-select').addEventListener('change', e => updateChart(e.target.value));
+document.getElementById('refresh-chart').addEventListener('click', () =>
+    updateChart(document.getElementById('data-select').value));
 
-        // Event listener for data select
-        document.getElementById('data-select').addEventListener('change', function() {
-            updateChart(this.value);
-        });
+/* ── Alert feed ────────────────────────────────────────────────────────────── */
+const alertsData = [
+    { type: 'Warning', severity: 'High', date: '2025-09-12', time: '14:30',
+      message: 'High water level detected — Glacial Lake Alpha, Brahmaputra Basin.',
+      location: 'Lat 30.12, Lon 93.89' },
+    { type: 'Alert', severity: 'Medium', date: '2025-09-10', time: '09:00',
+      message: 'Temperature anomaly and debris flow detected near Lake Beta.',
+      location: 'Lat 35.50, Lon 69.62' },
+    { type: 'Notice', severity: 'Low', date: '2025-09-08', time: '06:15',
+      message: 'Minor seismic event (M2.8) recorded within 50km radius of Lake Gamma.',
+      location: 'Lat 31.45, Lon 78.23' },
+];
 
-        // Event listener for severity filter
-        document.getElementById('severity-select').addEventListener('change', function() {
-            displayAlerts(this.value);
-        });
+function displayAlerts(filter = 'all') {
+    const list = document.getElementById('alerts-list');
+    const filtered = alertsData.filter(a =>
+        filter === 'all' || a.severity.toLowerCase() === filter
+    );
+    list.innerHTML = filtered.map(a => `
+        <div class="alert-item">
+            <div class="alert-date">${a.date} ${a.time}</div>
+            <div class="alert-type ${a.severity.toLowerCase()}">${a.type} (${a.severity})</div>
+            <div class="alert-message">${a.message}</div>
+            <div class="alert-location">📍 ${a.location}</div>
+        </div>
+    `).join('') || '<p style="color:#999;text-align:center;padding:20px;">No alerts match this filter.</p>';
+}
+displayAlerts();
+document.getElementById('severity-select').addEventListener('change',
+    e => displayAlerts(e.target.value));
 
-        // Event listener for date inputs
-        document.getElementById('start-date').addEventListener('change', function() {
-            updateChart(document.getElementById('data-select').value);
-        });
+/* ── Risk gauge (rendered only when results exist) ─────────────────────────── */
+{% if results and results.class is defined and results.class != -1 %}
+(function() {
+    const prob    = {{ results.probability }};
+    const pct     = {{ (results.probability * 100) | round(1) }};
+    const isAlert = {{ 'true' if results.class == 1 else 'false' }};
+    const barColor = isAlert ? '#e74c3c' : '#27ae60';
 
-        document.getElementById('end-date').addEventListener('change', function() {
-            updateChart(document.getElementById('data-select').value);
-        });
-
-        window.addEventListener('scroll', function () {
-            var signin = document.getElementById('signin');
-            var scrollPosition = window.scrollY;
-
-            if (scrollPosition > 100) {
-                signin.style.opacity = '0';
-            } else {
-                signin.style.opacity = '1';
+    Plotly.newPlot('risk-gauge', [{
+        type: 'indicator',
+        mode: 'gauge+number',
+        value: pct,
+        number: { suffix: '%', font: { size: 28, color: barColor } },
+        title: { text: 'GLOF Risk Probability', font: { size: 13, color: '#555' } },
+        gauge: {
+            axis: { range: [0, 100], tickwidth: 1, tickcolor: '#aaa' },
+            bar: { color: barColor },
+            bgcolor: '#f8fbff',
+            borderwidth: 1,
+            bordercolor: '#ddd',
+            steps: [
+                { range: [0,  40], color: '#d5f5e3' },
+                { range: [40, 70], color: '#fdebd0' },
+                { range: [70,100], color: '#fadbd8' },
+            ],
+            threshold: {
+                line: { color: '#c0392b', width: 3 },
+                thickness: 0.8, value: 70
             }
+        }
+    }], {
+        margin: { t: 40, b: 20, l: 20, r: 20 },
+        paper_bgcolor: 'transparent',
+    }, { responsive: true, displayModeBar: false });
+})();
+
+/* ── Lake location map ─────────────────────────────────────────────────────── */
+{% if results.latitude and results.longitude %}
+(function() {
+    const lat  = {{ results.latitude }};
+    const lon  = {{ results.longitude }};
+    const isAlert = {{ 'true' if results.class == 1 else 'false' }};
+    const color   = isAlert ? '#e74c3c' : '#27ae60';
+
+    const map = L.map('lake-map', { scrollWheelZoom: false })
+                  .setView([lat, lon], 9);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 17
+    }).addTo(map);
+
+    const marker = L.circleMarker([lat, lon], {
+        color: color, fillColor: color, fillOpacity: 0.75, radius: 14, weight: 2
+    }).addTo(map);
+
+    marker.bindPopup(`
+        <b>Lake: {{ results.lake_id }}</b><br>
+        Risk: <b style="color:${color}">{{ results.risk_percentage }}</b><br>
+        Class: {{ results.class }} &nbsp;|&nbsp; {{ results.engine }}
+    `).openPopup();
+})();
+{% endif %}
+{% endif %}
+
+/* ── Prediction history table ──────────────────────────────────────────────── */
+function loadHistory() {
+    fetch('/api/history?limit=15')
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('history-tbody');
+            if (!data.predictions || data.predictions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="no-history">No predictions logged yet. Run your first assessment above.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.predictions.map((p, i) => {
+                const badge = p.risk_class === 1
+                    ? '<span class="badge-alert">🚨 ALERT</span>'
+                    : '<span class="badge-safe">✅ SAFE</span>';
+                const ts = p.timestamp ? p.timestamp.substring(0, 19).replace('T', ' ') : '—';
+                return `<tr>
+                    <td>${i + 1}</td>
+                    <td>${ts}</td>
+                    <td>${p.lake_id || '—'}</td>
+                    <td>${p.latitude != null ? p.latitude : '—'}</td>
+                    <td>${p.longitude != null ? p.longitude : '—'}</td>
+                    <td>${badge}</td>
+                    <td>${p.risk_percentage || (p.risk_probability * 100).toFixed(1) + '%'}</td>
+                    <td>${p.inference_ms != null ? p.inference_ms + ' ms' : '—'}</td>
+                    <td>${p.source || '—'}</td>
+                </tr>`;
+            }).join('');
+        })
+        .catch(() => {
+            document.getElementById('history-tbody').innerHTML =
+                '<tr><td colspan="9" class="no-history">Could not load history.</td></tr>';
         });
-    </script>
+}
+
+function loadStats() {
+    fetch('/api/stats')
+        .then(r => r.json())
+        .then(s => {
+            document.getElementById('stat-total').textContent     = s.total_predictions ?? '0';
+            document.getElementById('stat-alerts').textContent    = s.total_alerts ?? '0';
+            document.getElementById('stat-alert-rate').textContent =
+                s.alert_rate != null ? (s.alert_rate * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('stat-avg-ms').textContent    =
+                s.avg_inference_ms != null ? s.avg_inference_ms + ' ms' : '—';
+        })
+        .catch(() => {});
+}
+
+loadHistory();
+loadStats();
+
+/* ── Sign-in scroll fade ───────────────────────────────────────────────────── */
+window.addEventListener('scroll', () => {
+    document.getElementById('signin').style.opacity =
+        window.scrollY > 100 ? '0' : '1';
+});
+</script>
 </body>
 </html>
