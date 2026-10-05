@@ -305,6 +305,51 @@ def sign():
     return render_template("sign.html")
 
 
+@app.route("/map")
+def map_view():
+    """Render interactive regional GIS map loaded from GLOFData.csv dataset."""
+    lakes = []
+    csv_path = os.path.join(app.root_path, "dataset", "GLOFData.csv")
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            # Sample or take first 300 rows for smooth map rendering
+            sample_df = df.head(300)
+            for _, row in sample_df.iterrows():
+                try:
+                    lat = float(row.get("Latitude")) if pd.notnull(row.get("Latitude")) else None
+                    lon = float(row.get("Longitude")) if pd.notnull(row.get("Longitude")) else None
+                    glof_val = int(row.get("GLOF")) if pd.notnull(row.get("GLOF")) else None
+                    lake_id = str(row.get("GLIMS_ID") or row.get("Code") or row.iloc[0]).strip()
+                    basin = str(row.get("Basin") or row.get("M_Basin") or "").strip()
+                    alt = float(row.get("Altitude")) if pd.notnull(row.get("Altitude")) else None
+                    area = float(row.get("Area")) if pd.notnull(row.get("Area")) else None
+
+                    if lat is not None and lon is not None:
+                        lakes.append({
+                            "lake_id": lake_id,
+                            "lat": lat,
+                            "lon": lon,
+                            "glof": glof_val,
+                            "basin": basin,
+                            "altitude": alt,
+                            "area": area,
+                        })
+                except Exception:
+                    continue
+        except Exception as exc:
+            log.warning("[MAP] Error reading GLOFData.csv: %s", exc)
+
+    return render_template("map.html", lakes=lakes)
+
+
+@app.route("/metrics")
+def metrics():
+    """Render model evaluation and benchmark dashboard."""
+    return render_template("metrics.html")
+
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Entry Point
 # ═══════════════════════════════════════════════════════════════════════════════
