@@ -22,8 +22,12 @@ from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from tensorflow.keras.utils import custom_object_scope
+try:
+    import tensorflow as tf
+    from tensorflow.keras.utils import custom_object_scope
+except ImportError:
+    tf = None
+    custom_object_scope = None
 
 # ─── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
@@ -67,9 +71,9 @@ feature_names  = joblib.load(FEATURES_PATH)
 log.info("[INIT] Loaded %d features.", len(feature_names))
 
 # ─── TFLite primary engine ────────────────────────────────────────────────────
-_tflite_interpreter: Optional[tf.lite.Interpreter] = None
+_tflite_interpreter = None
 
-if os.path.exists(TFLITE_MODEL_PATH):
+if tf is not None and os.path.exists(TFLITE_MODEL_PATH):
     log.info("[ENGINE] TFLite INT8 binary found → %s", TFLITE_MODEL_PATH)
     _tflite_interpreter = tf.lite.Interpreter(model_path=TFLITE_MODEL_PATH)
     _tflite_interpreter.allocate_tensors()
@@ -77,12 +81,12 @@ if os.path.exists(TFLITE_MODEL_PATH):
     _tflite_output_details = _tflite_interpreter.get_output_details()
     log.info("[ENGINE] TFLite interpreter ready. Primary engine: ACTIVE.")
 else:
-    log.warning("[ENGINE] TFLite model not found. Run quantize.py to build it.")
+    log.warning("[ENGINE] TFLite model not active or not found.")
 
 # ─── Keras fallback engine ────────────────────────────────────────────────────
 _keras_model = None
 
-if _tflite_interpreter is None:
+if tf is not None and _tflite_interpreter is None and os.path.exists(KERAS_MODEL_PATH):
     log.info("[ENGINE] Loading Keras fallback model: %s", KERAS_MODEL_PATH)
     with custom_object_scope({"focal_loss_fixed": focal_loss(gamma=2.0, alpha=0.25)}):
         _keras_model = tf.keras.models.load_model(KERAS_MODEL_PATH)
