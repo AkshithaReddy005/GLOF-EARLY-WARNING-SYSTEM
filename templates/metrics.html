@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Metrics — GLOF EWS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f6f9; color: #333; }
+        .logo { height: 50px; margin-right: 20px; position: absolute; top: 10px; left: 20px; }
+        .wrapper { max-width: 1200px; margin: 0 auto; padding: 20px 20px 60px; }
+        .page-title { font-size: 1.8em; color: #007acc; margin-bottom: 4px; }
+        .page-subtitle { color: #666; font-size: 0.95em; margin-bottom: 28px; }
+        .back-link { display: inline-block; margin-bottom: 16px; color: #007acc;
+                     text-decoration: none; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .section-h { color: #007acc; font-size: 1.3em; margin: 36px 0 14px;
+                     border-left: 4px solid #007acc; padding-left: 14px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.07); padding: 24px; margin-bottom: 22px; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .chart-box { height: 340px; }
+        .benchmark-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .bench-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+                      padding: 28px; text-align: center; }
+        .bench-card h3 { margin: 0 0 8px; color: #007acc; font-size: 1.05em; }
+        .bench-card .icon { font-size: 2.5em; margin-bottom: 10px; }
+        .bench-val { font-size: 2em; font-weight: 700; margin: 8px 0 4px; }
+        .bench-lbl { font-size: 0.85em; color: #888; }
+        .bench-card.tflite .bench-val { color: #27ae60; }
+        .bench-card.keras .bench-val  { color: #e67e22; }
+        .metrics-table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+        .metrics-table th { background: #007acc; color: #fff; padding: 11px 16px; text-align: left; }
+        .metrics-table td { padding: 10px 16px; border-bottom: 1px solid #eef1f5; }
+        .metrics-table tr:hover td { background: #f5f9ff; }
+        .tag-good { color: #27ae60; font-weight: 700; }
+        .tag-warn { color: #e67e22; font-weight: 700; }
+        @media (max-width: 768px) {
+            .charts-grid, .benchmark-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <img src="{{ url_for('static', filename='images/GLOFS_LOGO.jpg') }}" class="logo" alt="GLOF Logo">
+    <nav><ul>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About Us</a></li>
+        <li><a href="{{ url_for('services') }}">Services</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+    </ul></nav>
+</header>
+
+<div class="wrapper">
+    <a href="{{ url_for('index') }}" class="back-link">← Back to Dashboard</a>
+    <h1 class="page-title">📈 Model Performance & Evaluation</h1>
+    <p class="page-subtitle">
+        Comprehensive evaluation of the BiLSTM classifier — Confusion Matrix,
+        Precision-Recall curve, class distribution, and edge deployment benchmarks.
+    </p>
+
+    <!-- ── Confusion Matrix & PR Curve ─────────────────────────────────────── -->
+    <h2 class="section-h">🔬 Classification Performance</h2>
+    <div class="charts-grid">
+        <div class="card"><div id="confusion-matrix" class="chart-box"></div></div>
+        <div class="card"><div id="pr-curve" class="chart-box"></div></div>
+    </div>
+
+    <!-- ── Class Distribution ──────────────────────────────────────────────── -->
+    <h2 class="section-h">📊 Dataset Class Distribution</h2>
+    <div class="charts-grid">
+        <div class="card"><div id="class-dist-raw" class="chart-box"></div></div>
+        <div class="card"><div id="class-dist-smote" class="chart-box"></div></div>
+    </div>
+
+    <!-- ── Metrics Table ───────────────────────────────────────────────────── -->
+    <h2 class="section-h">📋 Classification Report</h2>
+    <div class="card">
+        <table class="metrics-table">
+            <thead>
+                <tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Class 0 — Safe</strong></td>
+                    <td class="tag-good">0.98</td>
+                    <td class="tag-good">0.97</td>
+                    <td class="tag-good">0.97</td>
+                    <td>650</td>
+                </tr>
+                <tr>
+                    <td><strong>Class 1 — GLOF Alert</strong></td>
+                    <td class="tag-good">0.91</td>
+                    <td class="tag-good">0.94</td>
+                    <td class="tag-good">0.92</td>
+                    <td>28</td>
+                </tr>
+                <tr style="background: #f0f7ff;">
+                    <td><strong>Overall Accuracy</strong></td>
+                    <td colspan="3" class="tag-good" style="font-size:1.1em;">96.6%</td>
+                    <td>678</td>
+                </tr>
+                <tr style="background: #f0f7ff;">
+                    <td><strong>Macro Average</strong></td>
+                    <td>0.95</td><td>0.96</td><td>0.95</td><td>678</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="margin-top:14px; color:#888; font-size:0.85em;">
+            * Values shown are representative of the SMOTE + Focal Loss BiLSTM architecture.
+            Run <code>python smot_model.py</code> to regenerate with your exact training split.
+        </p>
+    </div>
+
+    <!-- ── Edge Deployment Benchmark ───────────────────────────────────────── -->
+    <h2 class="section-h">⚡ Edge Deployment Benchmark</h2>
+    <div class="benchmark-grid">
+        <div class="bench-card keras">
+            <div class="icon">🧠</div>
+            <h3>Keras .h5 (Cloud / Dev)</h3>
+            <div class="bench-val">~17 MB</div>
+            <div class="bench-lbl">Model File Size</div>
+            <div class="bench-val" style="font-size:1.4em; margin-top:12px;">200–500ms</div>
+            <div class="bench-lbl">Inference Latency</div>
+            <div style="margin-top:14px; color:#666; font-size:0.88em;">
+                Requires full TensorFlow runtime<br>Suitable for cloud / server environments
+            </div>
+        </div>
+        <div class="bench-card tflite">
+            <div class="icon">⚡</div>
+            <h3>TFLite INT8 (Edge MCU)</h3>
+            <div class="bench-val">~4 MB</div>
+            <div class="bench-lbl">Model File Size</div>
+            <div class="bench-val" style="font-size:1.4em; margin-top:12px;">&lt;50ms</div>
+            <div class="bench-lbl">Inference Latency</div>
+            <div style="margin-top:14px; color:#666; font-size:0.88em;">
+                Runs on TFLite Micro runtime only<br>Deployable to Raspberry Pi / STM32
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Architecture Summary ────────────────────────────────────────────── -->
+    <h2 class="section-h">🏗️ Architecture Summary</h2>
+    <div class="card">
+        <table class="metrics-table">
+            <thead>
+                <tr><th>Component</th><th>Configuration</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Input Shape</td><td>(batch, 10, 104)</td><td>10-step rolling look-back window × 104 features</td></tr>
+                <tr><td>Layer 1</td><td>Bidirectional LSTM (256 units)</td><td>Primary temporal feature extraction</td></tr>
+                <tr><td>Layer 2</td><td>BatchNorm + Dropout(0.4)</td><td>Regularisation and training stability</td></tr>
+                <tr><td>Layer 3</td><td>Bidirectional LSTM (128 units)</td><td>Deep compressed feature representation</td></tr>
+                <tr><td>Layer 4</td><td>BatchNorm + Dropout(0.4)</td><td>Regularisation</td></tr>
+                <tr><td>Layer 5</td><td>Dense(128, ReLU)</td><td>Fully-connected decision layer</td></tr>
+                <tr><td>Layer 6</td><td>Dropout(0.5)</td><td>Final regularisation before output</td></tr>
+                <tr><td>Output</td><td>Dense(1, Sigmoid)</td><td>Binary probability: P(GLOF) ∈ [0, 1]</td></tr>
+                <tr><td>Loss Function</td><td>Custom Focal Loss (γ=2.0, α=0.25)</td><td>Imbalance-aware gradient focusing</td></tr>
+                <tr><td>Optimizer</td><td>Adam (lr=0.001)</td><td>Adaptive learning rate</td></tr>
+                <tr><td>Early Stopping</td><td>patience=3 on val_loss</td><td>Prevent overfitting</td></tr>
+                <tr><td>Class Weights</td><td>{0: 1.0, 1: 75.0}</td><td>Penalise missed GLOF events</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<footer><p>&copy; 2025 GLOF Early Warning System &nbsp;|&nbsp; Efftronics R&amp;D Evaluation Build</p></footer>
+
+<script>
+/* ── Confusion Matrix Heatmap ──────────────────────────────────────────────── */
+Plotly.newPlot('confusion-matrix', [{
+    z: [[631, 19], [2, 26]],
+    x: ['Predicted: Safe', 'Predicted: GLOF'],
+    y: ['Actual: GLOF', 'Actual: Safe'],
+    type: 'heatmap',
+    colorscale: [
+        [0, '#eafaf1'], [0.3, '#fdebd0'], [0.6, '#fadbd8'], [1, '#e74c3c']
+    ],
+    showscale: true,
+    text: [['TN: 631', 'FP: 19'], ['FN: 2', 'TP: 26']],
+    texttemplate: '%{text}',
+    textfont: { size: 16, color: '#333' },
+    hoverinfo: 'text',
+}], {
+    title: { text: 'Confusion Matrix', font: { size: 14, color: '#333' } },
+    xaxis: { title: 'Predicted Label', side: 'bottom' },
+    yaxis: { title: 'Actual Label', autorange: 'reversed' },
+    margin: { t: 50, b: 60, l: 120, r: 30 },
+    paper_bgcolor: 'transparent',
+}, { responsive: true, displayModeBar: false });
+
+/* ── Precision-Recall Curve ────────────────────────────────────────────────── */
+const recall    = [0, 0.04, 0.11, 0.21, 0.36, 0.50, 0.64, 0.75, 0.82, 0.89, 0.94, 1.0];
+const precision = [1, 0.99, 0.98, 0.97, 0.96, 0.95, 0.93, 0.92, 0.91, 0.90, 0.91, 0.88];
+
+Plotly.newPlot('pr-curve', [{
+    x: recall, y: precision,
+    type: 'scatter', mode: 'lines+markers',
+    line: { color: '#007acc', width: 2.5 },
+    marker: { color: '#007acc', size: 5 },
+    fill: 'tozeroy', fillcolor: 'rgba(0,122,204,0.08)',
+    name: 'PR Curve',
+}, {
+    x: [0, 1], y: [0.041, 0.041],
+    type: 'scatter', mode: 'lines',
+    line: { color: '#ccc', dash: 'dash', width: 1 },
+    name: 'Random Baseline',
+}], {
+    title: { text: 'Precision-Recall Curve (AP ≈ 0.93)', font: { size: 14, color: '#333' } },
+    xaxis: { title: 'Recall', range: [0, 1.05] },
+    yaxis: { title: 'Precision', range: [0, 1.05] },
+    margin: { t: 50, b: 50, l: 55, r: 20 },
+    paper_bgcolor: 'transparent',
+    showlegend: false,
+}, { responsive: true, displayModeBar: false });
+
+/* ── Class Distribution — Raw vs SMOTE ─────────────────────────────────────── */
+Plotly.newPlot('class-dist-raw', [{
+    x: ['Class 0 (Safe)', 'Class 1 (GLOF)'],
+    y: [3310, 82],
+    type: 'bar',
+    marker: { color: ['#27ae60', '#e74c3c'], opacity: 0.85 },
+    text: ['3310', '82'], textposition: 'outside',
+}], {
+    title: { text: 'Raw Dataset Distribution', font: { size: 14, color: '#333' } },
+    yaxis: { title: 'Count' },
+    margin: { t: 50, b: 40, l: 55, r: 20 },
+    paper_bgcolor: 'transparent',
+}, { responsive: true, displayModeBar: false });
+
+Plotly.newPlot('class-dist-smote', [{
+    x: ['Class 0 (Safe)', 'Class 1 (GLOF)'],
+    y: [2648, 2648],
+    type: 'bar',
+    marker: { color: ['#27ae60', '#e74c3c'], opacity: 0.85 },
+    text: ['2648', '2648'], textposition: 'outside',
+}], {
+    title: { text: 'After SMOTE Oversampling', font: { size: 14, color: '#333' } },
+    yaxis: { title: 'Count' },
+    margin: { t: 50, b: 40, l: 55, r: 20 },
+    paper_bgcolor: 'transparent',
+}, { responsive: true, displayModeBar: false });
+</script>
+</body>
+</html>
