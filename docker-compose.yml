@@ -1,0 +1,49 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# GLOF Early Warning System — Docker Compose Orchestration
+# Usage:
+#   docker compose up              → Start web app
+#   docker compose up --build      → Rebuild and start
+#   docker compose --profile mqtt up → Start with MQTT broker
+# ══════════════════════════════════════════════════════════════════════════════
+
+version: "3.9"
+
+services:
+  # ── Core Web Application ────────────────────────────────────────────────────
+  glof-web:
+    build: .
+    container_name: glof-ews
+    ports:
+      - "5000:5000"
+    environment:
+      - ENABLE_MQTT=${ENABLE_MQTT:-0}
+      - MQTT_BROKER_HOST=mqtt-broker
+      - MQTT_BROKER_PORT=1883
+    volumes:
+      - ./dataset:/app/dataset:ro
+      - prediction_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── MQTT Broker (optional — activate with --profile mqtt) ────────────────
+  mqtt-broker:
+    image: eclipse-mosquitto:2
+    container_name: glof-mqtt
+    profiles:
+      - mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+    restart: unless-stopped
+
+volumes:
+  prediction_data:
+  mqtt_data:
+  mqtt_logs:
